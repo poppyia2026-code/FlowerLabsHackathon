@@ -1,0 +1,43 @@
+╔══════════════════════════════════════════════════════════╗
+║  PrivCred — AUDITABLE CLAIM RECEIPT (synthetic MVP)     ║
+╚══════════════════════════════════════════════════════════╝
+  receipt_id : rcpt-967fe7030478
+  run_id     : run-eb94f50ba966
+  outcome    : credentialed
+  issued_at  : 2026-09-29T19:08:56Z
+  synthetic  : True
+
+  Provider
+    id      : SYNTH-NPI-1999999999
+    network : SYNTH-NETWORK-X
+    name    : Synthetic Provider P (happy path)
+
+  HITL
+    action  : approve
+    actor   : print-receipt
+    reason  : F8 demo
+
+  Claims snapshot (6)
+    • board_status = 'clear' (conf=0.95, ref=fixture://hospital/board#P)
+    • work_history_complete = True (conf=0.98, ref=fixture://hospital/work_history#P)
+    • enrollment_status = 'enrolled' (conf=0.9, ref=fixture://payer/enrollment#P)
+    • exclusion_clear = True (conf=0.97, ref=fixture://payer/exclusion#P)
+    • license_active = True (conf=0.99, ref=fixture://payer/license#P)
+    • npi_enumerated = True (conf=1.0, ref=fixture://payer/npi#P)
+
+  Run-series stages (9)
+    → kickoff
+    → claim_request.HospitalCred
+    → claim_response.HospitalCred
+    → claim_request.PayerEnrollment
+    → claim_response.PayerEnrollment
+    → claims_aggregated
+    → hitl_pause
+    → claim_receipt
+    → complete
+
+  Message: Verification completed under human supervision. Synthetic demo — not a production credentialing decision. Not a HITRUST or HIPAA-certified audit packet.
+
+  NOTE: Synthetic demo receipt — not a production credentialing
+  decision. Not a HITRUST / HIPAA-certified audit packet.
+════════════════════════════════════════════════════════════

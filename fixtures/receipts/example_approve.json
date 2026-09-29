@@ -1,0 +1,80 @@
+{
+  "receipt_id": "rcpt-967fe7030478",
+  "run_id": "run-eb94f50ba966",
+  "provider": {
+    "provider_id": "SYNTH-NPI-1999999999",
+    "network_id": "SYNTH-NETWORK-X",
+    "display_name": "Synthetic Provider P (happy path)"
+  },
+  "outcome": "credentialed",
+  "hitl": {
+    "action": "approve",
+    "actor": "print-receipt",
+    "reason": "F8 demo",
+    "decided_at": 1790708936.5423918
+  },
+  "claims_snapshot": [
+    {
+      "claim_type": "board_status",
+      "value": "clear",
+      "confidence": 0.95,
+      "evidence_ref": "fixture://hospital/board#P",
+      "notes": "No board flags in synthetic set"
+    },
+    {
+      "claim_type": "work_history_complete",
+      "value": true,
+      "confidence": 0.98,
+      "evidence_ref": "fixture://hospital/work_history#P",
+      "notes": "Synth work-history shard complete"
+    },
+    {
+      "claim_type": "enrollment_status",
+      "value": "enrolled",
+      "confidence": 0.9,
+      "evidence_ref": "fixture://payer/enrollment#P",
+      "notes": "Synth enrolled in network X"
+    },
+    {
+      "claim_type": "exclusion_clear",
+      "value": true,
+      "confidence": 0.97,
+      "evidence_ref": "fixture://payer/exclusion#P",
+      "notes": "Synth OIG-like exclusion clear"
+    },
+    {
+      "claim_type": "license_active",
+      "value": true,
+      "confidence": 0.99,
+      "evidence_ref": "fixture://payer/license#P",
+      "notes": "Synth state license active"
+    },
+    {
+      "claim_type": "npi_enumerated",
+      "value": true,
+      "confidence": 1.0,
+      "evidence_ref": "fixture://payer/npi#P",
+      "notes": "Fake NPI enumerated in synth registry"
+    }
+  ],
+  "message": "Verification completed under human supervision. Synthetic demo \u2014 not a production credentialing decision. Not a HITRUST or HIPAA-certified audit packet.",
+  "issued_at": 1790708936.5424206,
+  "synthetic": true,
+  "run_series": [
+    "kickoff",
+    "claim_request.HospitalCred",
+    "claim_response.HospitalCred",
+    "claim_request.PayerEnrollment",
+    "claim_response.PayerEnrollment",
+    "claims_aggregated",
+    "hitl_pause",
+    "claim_receipt",
+    "complete"
+  ],
+  "audit": {
+    "emitted_after": "hitl_approve",
+    "hitl_required": true,
+    "synthetic": true,
+    "compliance_claims": null
+  }
+}

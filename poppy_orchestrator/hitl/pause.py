@@ -11,7 +11,7 @@ Contract for Franco:
 
 # TODO FRANCO: Wire CallbackHitlGate (or Flower Chat connector) so the claim
 # panel posts back approve/escalate/reject. Do not remove the pause.
-# TODO FRANCO: F8 claim receipt rendering after approve.
+# F8 receipt emit lives in poppy_orchestrator.receipts.emit (after Approve only).
 """
 
 from __future__ import annotations

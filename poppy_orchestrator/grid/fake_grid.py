@@ -20,7 +20,6 @@ from poppy_orchestrator.grid.roles import (
     ROLE_HOSPITAL_CRED,
     ROLE_PAYER_ENROLLMENT,
 )
-from poppy_orchestrator.supernodes.claim_service import handle_inbound_message
 
 # Stable fake uint64 decimal strings (judge-visible node ids).
 HOSPITAL_CRED_NODE_ID = "9000000000000001001"
@@ -49,6 +48,9 @@ def _default_nodes() -> list[FakeGridNode]:
 
 def _synthetic_claim_reply(role: str, inbound_payload: str) -> str:
     """Build synthetic ClaimResponse JSON via F2/F3 SuperNode claim service."""
+    # Imported here: claim_service -> clients -> grid -> this module is a cycle.
+    from poppy_orchestrator.supernodes.claim_service import handle_inbound_message
+
     return handle_inbound_message(role, inbound_payload)
 
 

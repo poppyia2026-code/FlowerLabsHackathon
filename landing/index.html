@@ -300,7 +300,8 @@ body::after{content:"";position:fixed;inset:-50%;z-index:var(--z-grain);pointer-
 .ctable th{font:500 10.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted);text-align:left;padding:0 0 10px}
 .ctable td{padding:10px 0;border-top:1px solid var(--line);color:var(--fg-2)}
 .ctable td.v{color:var(--fg);font-weight:500}
-.ctable td.c,.ctable th.c{text-align:right;font-variant-numeric:tabular-nums}
+.ctable td.c,.ctable th.c{text-align:right;font-variant-numeric:tabular-nums;padding-left:16px}
+.ctable td.src,.ctable th.src{padding-left:24px}
 .ctable td.src{color:var(--muted)}
 .ctable tr.flag td{color:var(--poppy)}
 .ctable tr.flag td.v::after{content:" · disputed";font-size:11px;color:var(--poppy)}
@@ -624,7 +625,7 @@ body::after{content:"";position:fixed;inset:-50%;z-index:var(--z-grain);pointer-
             <div id="review" role="tabpanel" aria-labelledby="tab-P" style="display:flex;flex-direction:column;gap:18px;flex:1">
               <div class="prov"><h3 id="p-name">Synthetic Provider P</h3><code id="p-id">SYNTH-NPI-1999999999</code></div>
               <table class="ctable">
-                <thead><tr><th>claim</th><th>value</th><th class="c">conf</th><th class="src">from</th></tr></thead>
+                <thead><tr><th>claim</th><th>value</th><th class="c">confidence</th><th class="src">source</th></tr></thead>
                 <tbody id="p-claims"></tbody>
               </table>
               <p class="status-box" id="p-status"></p>

@@ -23,6 +23,10 @@ from typing import Any, Optional
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 from poppy_orchestrator.clients.hospital_cred import StubHospitalCredClient
 from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClient
+from poppy_orchestrator.clients.grid_clients import (
+    GridHospitalCredClient,
+    GridPayerEnrollmentClient,
+)
 from poppy_orchestrator.events.emit import EventEmitter, flower_emitter_from_session
 from poppy_orchestrator.hitl.pause import (
     AutoApproveHitlGate,
@@ -73,6 +77,20 @@ app = _build_app()
 def build_stub_clients() -> tuple[SuperNodeClaimClient, SuperNodeClaimClient]:
     """Synthetic SuperNode stubs (fixtures/providers.json)."""
     return StubHospitalCredClient(), StubPayerEnrollmentClient()
+
+
+def build_grid_clients(
+    grid: Any = None,
+) -> tuple[SuperNodeClaimClient, SuperNodeClaimClient]:
+    """Claim clients that fetch via FakeAgentGrid / live agent.grid (F2/F3).
+
+    Local tests: omit grid → FakeAgentGrid auto-replies with F1 fixtures.
+    Live: pass agent.grid once Leandro registers HospitalCred + PayerEnrollment.
+    """
+    return (
+        GridHospitalCredClient(grid=grid),
+        GridPayerEnrollmentClient(grid=grid),
+    )
 
 
 def build_hitl_gate(*, mode: str = "auto") -> HitlGate:

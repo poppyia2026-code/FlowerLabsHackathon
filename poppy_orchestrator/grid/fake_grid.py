@@ -16,19 +16,11 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from poppy_orchestrator.clients.hospital_cred import StubHospitalCredClient
-from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClient
-from poppy_orchestrator.contracts.claims import (
-    HOSPITAL_CRED_CLAIMS,
-    PAYER_ENROLLMENT_CLAIMS,
-    ClaimRequest,
-    ProviderRef,
-    new_request_id,
-)
 from poppy_orchestrator.grid.roles import (
     ROLE_HOSPITAL_CRED,
     ROLE_PAYER_ENROLLMENT,
 )
+from poppy_orchestrator.supernodes.claim_service import handle_inbound_message
 
 # Stable fake uint64 decimal strings (judge-visible node ids).
 HOSPITAL_CRED_NODE_ID = "9000000000000001001"
@@ -56,43 +48,8 @@ def _default_nodes() -> list[FakeGridNode]:
 
 
 def _synthetic_claim_reply(role: str, inbound_payload: str) -> str:
-    """Build synthetic ClaimResponse JSON for a role stub (fixtures only)."""
-    provider_id = "SYNTH-NPI-1999999999"
-    network_id = "SYNTH-NETWORK-X"
-    try:
-        parsed = json.loads(inbound_payload)
-        provider_id = str(parsed.get("provider_id") or provider_id)
-        network_id = str(parsed.get("network_id") or network_id)
-    except (json.JSONDecodeError, TypeError, AttributeError):
-        pass
-
-    provider = ProviderRef(provider_id=provider_id, network_id=network_id)
-    if role == ROLE_HOSPITAL_CRED:
-        req = ClaimRequest(
-            request_id=new_request_id("hosp"),
-            provider=provider,
-            claim_types=tuple(sorted(HOSPITAL_CRED_CLAIMS)),
-            source_node=ROLE_HOSPITAL_CRED,
-        )
-        resp = StubHospitalCredClient().request_claims(req)
-    elif role == ROLE_PAYER_ENROLLMENT:
-        req = ClaimRequest(
-            request_id=new_request_id("pay"),
-            provider=provider,
-            claim_types=tuple(sorted(PAYER_ENROLLMENT_CLAIMS)),
-            source_node=ROLE_PAYER_ENROLLMENT,
-        )
-        resp = StubPayerEnrollmentClient().request_claims(req)
-    else:
-        return json.dumps(
-            {
-                "ok": False,
-                "error": f"unknown synthetic role: {role}",
-                "synthetic": True,
-            },
-            separators=(",", ":"),
-        )
-    return json.dumps(resp.to_dict(), separators=(",", ":"))
+    """Build synthetic ClaimResponse JSON via F2/F3 SuperNode claim service."""
+    return handle_inbound_message(role, inbound_payload)
 
 
 @dataclass

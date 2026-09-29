@@ -9,9 +9,9 @@ Contract for Franco:
   3. Decision arrives via HitlGate.wait_for_decision(...) → HitlDecision
   4. Orchestrator never auto-skips this gate on the live path
 
-# TODO FRANCO: Wire CallbackHitlGate (or Flower Chat connector) so the claim
-# panel posts back approve/escalate/reject. Do not remove the pause.
+# F7: PanelHitlGate / ConsoleHitlGate / HttpPanelServer wire Approve|Escalate|Reject.
 # F8 receipt emit lives in poppy_orchestrator.receipts.emit (after Approve only).
+# Optional: Flower Chat connector can still wrap CallbackHitlGate.
 """
 
 from __future__ import annotations
@@ -93,7 +93,7 @@ class AutoApproveHitlGate(HitlGate):
 
 
 class ConsoleHitlGate(HitlGate):
-    """Interactive CLI pause for local demos without Franco UI."""
+    """Interactive CLI pause — F7 panel text; never auto-approves on empty input."""
 
     def wait_for_decision(
         self,
@@ -102,25 +102,12 @@ class ConsoleHitlGate(HitlGate):
         *,
         timeout_s: Optional[float] = None,
     ) -> HitlDecision:
-        _emit_hitl_request(emitter, bundle)
-        print("\n=== HITL Claim Panel (console stub) ===")
-        for c in bundle.all_claims():
-            print(f"  * {c.claim_type} = {c.value!r}  (node evidence={c.evidence_ref})")
-        if bundle.missing_nodes():
-            print(f"  ! missing nodes: {bundle.missing_nodes()}")
-        print("Actions: [a]pprove  [e]scalate  [r]eject")
-        raw = input("> ").strip().lower() or "a"
-        action = {
-            "a": HitlAction.APPROVE,
-            "approve": HitlAction.APPROVE,
-            "e": HitlAction.ESCALATE,
-            "escalate": HitlAction.ESCALATE,
-            "r": HitlAction.REJECT,
-            "reject": HitlAction.REJECT,
-        }.get(raw, HitlAction.APPROVE)
-        decision = HitlDecision(action=action, actor="console-operator", reason=f"console:{raw}")
-        emitter.emit({"event": "privcred.hitl.decision", "data": decision.to_dict()})
-        return decision
+        # Delegate to PanelHitlGate + console wait_fn (re-prompt, no default approve)
+        from poppy_orchestrator.hitl.panel_gate import PanelHitlGate, console_panel_wait_fn
+
+        _ = timeout_s
+        gate = PanelHitlGate(wait_fn=console_panel_wait_fn(), actor="console-operator")
+        return gate.wait_for_decision(bundle, emitter, timeout_s=timeout_s)
 
 
 class CallbackHitlGate(HitlGate):

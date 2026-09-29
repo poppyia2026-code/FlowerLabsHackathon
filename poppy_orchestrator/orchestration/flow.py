@@ -19,6 +19,7 @@ from poppy_orchestrator.contracts.claims import (
     ClaimBundle,
     ClaimReceipt,
     ClaimRequest,
+    ClaimResponse,
     CredentialingOutcome,
     HitlAction,
     HitlDecision,
@@ -88,6 +89,17 @@ def run_credentialing_flow(
     )
     if hosp_errs:
         emit_text(emitter, f"HospitalCred validation: {hosp_errs}")
+        # F6 fail-closed: incomplete/invalid claims must not look like a healthy node
+        if hosp_resp.ok:
+            hosp_resp = ClaimResponse(
+                request_id=hosp_resp.request_id,
+                source_node=hosp_resp.source_node,
+                provider_id=hosp_resp.provider_id,
+                claims=(),
+                ok=False,
+                error="; ".join(hosp_errs),
+                synthetic=hosp_resp.synthetic,
+            )
 
     # --- PayerEnrollment ---
     pay_req = ClaimRequest(
@@ -106,6 +118,17 @@ def run_credentialing_flow(
     )
     if pay_errs:
         emit_text(emitter, f"PayerEnrollment validation: {pay_errs}")
+        # F6 fail-closed: incomplete/invalid claims must not look like a healthy node
+        if pay_resp.ok:
+            pay_resp = ClaimResponse(
+                request_id=pay_resp.request_id,
+                source_node=pay_resp.source_node,
+                provider_id=pay_resp.provider_id,
+                claims=(),
+                ok=False,
+                error="; ".join(pay_errs),
+                synthetic=pay_resp.synthetic,
+            )
 
     bundle = ClaimBundle(
         run_id=run_id,

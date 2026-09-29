@@ -32,7 +32,8 @@
         "display_name": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "claim_decision": {
       "type": "object",
@@ -59,7 +60,8 @@
         "notes": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "claim_request": {
       "type": "object",
@@ -97,7 +99,8 @@
         "synthetic": {
           "const": true
         }
-      }
+      },
+      "additionalProperties": false
     },
     "claim_response": {
       "type": "object",
@@ -144,7 +147,8 @@
         "synthetic": {
           "const": true
         }
-      }
+      },
+      "additionalProperties": false
     },
     "hitl_action": {
       "type": "string",
@@ -204,10 +208,14 @@
             "decided_at": {
               "type": "number"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "claims_snapshot": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/claim_decision"
+          }
         },
         "message": {
           "type": "string"
@@ -218,7 +226,8 @@
         "synthetic": {
           "const": true
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

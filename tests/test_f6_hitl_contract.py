@@ -7,7 +7,6 @@ AC (docs/BOARD.md):
 from __future__ import annotations
 
 from typing import Optional
-from pathlib import Path
 
 import jsonschema
 import pytest
@@ -18,6 +17,7 @@ from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClien
 from poppy_orchestrator.contracts.claims import (
     HOSPITAL_CRED_CLAIMS,
     PAYER_ENROLLMENT_CLAIMS,
+    ClaimDecision,
     ClaimRequest,
     ClaimResponse,
     CredentialingOutcome,
@@ -29,8 +29,6 @@ from poppy_orchestrator.contracts.claims import (
 from poppy_orchestrator.events.emit import LocalEventBus, NullEmitter
 from poppy_orchestrator.hitl.pause import CallbackHitlGate, HitlGate
 from poppy_orchestrator.orchestration.flow import OrchestratorConfig, run_credentialing_flow
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 class RecordingHitlGate(HitlGate):
@@ -286,3 +284,48 @@ def test_escalate_path_does_not_credential_even_with_both_nodes():
     )
     assert result.outcome == CredentialingOutcome.ESCALATED
     assert result.receipt is None
+
+
+def test_incomplete_ok_claims_fail_closed():
+    """ok=True but missing required claim types must not credential (F6 fail-closed)."""
+
+    class IncompleteHospital(SuperNodeClaimClient):
+        node_name = "HospitalCred"
+
+        def request_claims(self, request: ClaimRequest) -> ClaimResponse:
+            return ClaimResponse(
+                request_id=request.request_id,
+                source_node=self.node_name,
+                provider_id=request.provider.provider_id,
+                claims=(ClaimDecision(claim_type="board_status", value="clear"),),
+                ok=True,
+                synthetic=True,
+            )
+
+    gate = RecordingHitlGate(HitlAction.APPROVE)
+    result = run_credentialing_flow(
+        hospital=IncompleteHospital(),
+        payer=StubPayerEnrollmentClient(),
+        hitl_gate=gate,
+        emitter=NullEmitter(),
+        config=OrchestratorConfig(provider_id="SYNTH-NPI-1999999999"),
+    )
+    assert gate.calls == 1, "HITL must still run"
+    assert "HospitalCred" in result.bundle.missing_nodes()
+    assert result.outcome == CredentialingOutcome.FAILED
+
+
+def test_schema_rejects_unknown_properties(claim_contract_schema):
+    bad = {
+        "request_id": "req-x",
+        "provider": {
+            "provider_id": "SYNTH-NPI-1999999999",
+            "network_id": "SYNTH-NETWORK-X",
+        },
+        "claim_types": ["board_status"],
+        "source_node": "HospitalCred",
+        "synthetic": True,
+        "extra_field": "nope",
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        _validate_definition(bad, claim_contract_schema, "claim_request")

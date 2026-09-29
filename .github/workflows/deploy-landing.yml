@@ -1,0 +1,44 @@
+name: Deploy landing
+
+# Publishes landing/ to the privcred-landing Vercel project.
+# Merges to main go to production; pull requests get a preview.
+on:
+  push:
+    branches: [main]
+    paths: ["landing/**", ".github/workflows/deploy-landing.yml"]
+  pull_request:
+    paths: ["landing/**", ".github/workflows/deploy-landing.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-landing-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: team_7FOAOpEall6aAtjwSBxQxk0b
+  VERCEL_PROJECT_ID: prj_NEfiBpwwRbIoekhQENBwBNf9cyEP
+
+jobs:
+  deploy:
+    # Fork PRs cannot read the Vercel secret, so they skip instead of failing.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global vercel@54
+      - name: Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then target=""; else target="--prod"; fi
+          url=$(vercel deploy $target --yes --token "$VERCEL_TOKEN")
+          echo "Deployed: $url" | tee -a "$GITHUB_STEP_SUMMARY"

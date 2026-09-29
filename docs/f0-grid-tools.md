@@ -1,5 +1,10 @@
 # F0 — Collaborative AgentApp Grid tools (≥2 roles)
 
+**Runtime update:** [F4 live runtime](f4-live-runtime.md) replaces the two-stage
+handoff plus local-fixture lookup with actual Grid-backed claim clients. This
+document's standalone F0 script remains an offline diagnostic. Automatic
+approval is not available in the deployed AgentApp; use the Flower Chat review.
+
 Score playbook P0: judges must see live SuperGrid collaboration via Flower
 **Collaborative AgentApp Grid tools** (`agent.grid` sample / message) between
 ≥2 roles — not a lone chatbot.

@@ -4,6 +4,23 @@ Federated US medical provider credentialing claims on Flower SuperGrid + HITL (s
 
 **Team:** PoppyAI · Demos ~17:15 PT
 
+## Real Flower deployment and human review
+
+Use [the F4 runtime guide](docs/f4-live-runtime.md) for Flower 1.39, two real
+SuperNodes, and review in Flower Chat. The coordinator consumes node replies;
+missing replies are never replaced with local fixtures. Workers read their own
+configured synthetic data files, which are excluded from the FAB. Approval is
+an explicit second chat turn and never automatic on this path.
+
+To exercise real local Flower processes on macOS/Linux, run
+`uv run python scripts/smoke_local_flower.py`. It starts a TLS SuperLink and two
+authenticated SuperNodes, checks the review workflow, and shuts them down.
+This automated synthetic test needs no cloud login and does not prove SuperGrid
+deployment or a real human approval.
+
+The local dry-run commands below deliberately simulate transport or approval;
+they do not establish that a SuperGrid deployment is working.
+
 ## Quick start
 ```bash
 # Orchestrator dry-run (no live PHI)

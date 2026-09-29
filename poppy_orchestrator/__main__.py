@@ -55,7 +55,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     parser.add_argument(
         "--hitl",
-        choices=["approve", "escalate", "reject", "console", "auto"],
+        choices=["approve", "escalate", "reject", "console", "panel", "auto"],
         default="approve",
         help="HITL simulation mode (default: approve → receipt)",
     )
@@ -69,8 +69,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if args.hitl == "auto":
         gate = build_hitl_gate(mode="auto")
-    elif args.hitl == "console":
-        gate = build_hitl_gate(mode="console")
+    elif args.hitl in {"console", "panel"}:
+        gate = build_hitl_gate(mode="panel")
     else:
         gate = _preset_gate(args.hitl)
 

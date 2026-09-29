@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Local dry-run of PoppyOrchestrator — no SuperGrid credentials, no flwr required.
 
+Prefer F5 CLI: ``python -m poppy_orchestrator`` or ``python scripts/run_f5.py``.
+
 Usage:
   python scripts/dry_run.py
   python scripts/dry_run.py --provider SYNTH-NPI-1888888888 --hitl escalate

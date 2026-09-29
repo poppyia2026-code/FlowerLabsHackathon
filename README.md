@@ -19,3 +19,17 @@ See `docs/ENGINEERING_LOOP.md`: PR → review → Vercel → demo video → bugs
 - F6 shared claim contract + HITL gate
 
 Score playbook: `docs/hackathon-score-playbook.md`
+
+## F5 PoppyOrchestrator kickoff (local)
+
+```bash
+# Credential synthetic provider P for network X → HITL → receipt
+python -m poppy_orchestrator
+python scripts/run_f5.py
+python scripts/run_f5.py --provider SYNTH-NPI-1888888888 --hitl escalate
+
+# Unit smoke (stdlib unittest — no pytest required)
+python -m unittest tests.test_f5_kickoff -v
+```
+
+AgentApp-only FAB (`poppy_orchestrator.agent_app:app`). Synthetic fixtures only.

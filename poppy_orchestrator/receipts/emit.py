@@ -127,6 +127,6 @@ def emit_receipt_after_approve(
     emitter.emit({"event": "privcred.claim_receipt", "data": payload})
     # Screenshotable text block for Flower Chat / deck / fail-soft
     text_block = format_receipt_text(payload)
-    emit_text(emitter, text_block)
+    emit_text(emitter, text_block, preformatted=True)
     emit_text(emitter, f"Claim receipt {receipt.receipt_id}: {receipt.message}")
     return receipt

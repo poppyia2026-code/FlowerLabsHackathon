@@ -31,7 +31,13 @@ from poppy_orchestrator.contracts.claims import (
     new_request_id,
     validate_claim_response,
 )
-from poppy_orchestrator.events.emit import EventEmitter, emit_stage, emit_text
+from poppy_orchestrator.events.emit import (
+    AUDIENCE_REVIEWER,
+    AUDIENCE_TRACE,
+    EventEmitter,
+    emit_stage,
+    emit_text,
+)
 from poppy_orchestrator.hitl.pause import HitlGate
 from poppy_orchestrator.receipts.emit import emit_receipt_after_approve
 from poppy_orchestrator.endeavor.summarize import (
@@ -65,7 +71,7 @@ def resolve_provider_display_name(
     """Look up display_name from synthetic fixtures (no live directory)."""
     path = fixtures_path or _FIXTURES
     try:
-        with path.open() as f:
+        with path.open(encoding="utf-8") as f:
             data = json.load(f)
         for row in data.get("providers", []):
             if row.get("provider_id") == provider_id:
@@ -148,6 +154,7 @@ def run_credentialing_flow(
         f"PrivCred PoppyOrchestrator kickoff: credential {provider.display_name} "
         f"({provider.provider_id}) for network {provider.network_id} "
         "[synthetic fixtures only — no live CAQH/NPDB].",
+        audience=AUDIENCE_TRACE,
     )
 
     # --- HospitalCred ---
@@ -230,6 +237,8 @@ def run_credentialing_flow(
     emit_text(
         emitter,
         f"Endeavor assist [{mode_tag}] on PoppyOrchestrator: {endeavor.text[:280]}",
+        # A stand-in text is not a model's brief: keep it out of the review.
+        audience=AUDIENCE_REVIEWER if endeavor.live_call else AUDIENCE_TRACE,
     )
 
     # --- HITL (mandatory — never silent skip) ---

@@ -8,6 +8,12 @@ import time
 import uuid
 
 
+# Who a text message is for. Everything is kept in the run trace; only
+# reviewer messages are shown in Flower Chat.
+AUDIENCE_REVIEWER = "reviewer"
+AUDIENCE_TRACE = "trace"
+
+
 class EventEmitter(Protocol):
     def emit(self, event: dict[str, Any]) -> None: ...
 
@@ -46,21 +52,38 @@ def flower_emitter_from_session(agent: Any) -> EventEmitter:
     class _Adapter:
         def emit(self, event: dict[str, Any]) -> None:
             events.emit({**event, "type": event["event"]})
-            if event["event"] == "privcred.message":
-                events.emit({"type": "response.output_text.delta",
-                             "delta": event["data"]["text"] + "\n\n"})
+            if event["event"] != "privcred.message":
+                return
+            data = event["data"]
+            if data.get("audience", AUDIENCE_REVIEWER) != AUDIENCE_REVIEWER:
+                return
+            text = data["text"]
+            if data.get("preformatted"):
+                text = f"```text\n{text}\n```"
+            events.emit({"type": "response.output_text.delta", "delta": text + "\n\n"})
 
     return _Adapter()
 
 
-def emit_text(emitter: EventEmitter, text: str, *, role: str = "assistant") -> None:
-    """Publish human-readable text for Flower Chat / dry-run logs."""
-    emitter.emit(
-        {
-            "event": "privcred.message",
-            "data": {"role": role, "text": text, "synthetic": True},
-        }
-    )
+def emit_text(
+    emitter: EventEmitter,
+    text: str,
+    *,
+    role: str = "assistant",
+    audience: str = AUDIENCE_REVIEWER,
+    preformatted: bool = False,
+) -> None:
+    """Publish human-readable text for Flower Chat / dry-run logs.
+
+    ``audience=AUDIENCE_TRACE`` keeps a line out of the chat. ``preformatted``
+    keeps the alignment of a fixed-width block when the chat renders it.
+    """
+    data: dict[str, Any] = {"role": role, "text": text, "synthetic": True}
+    if audience != AUDIENCE_REVIEWER:
+        data["audience"] = audience
+    if preformatted:
+        data["preformatted"] = True
+    emitter.emit({"event": "privcred.message", "data": data})
 
 
 def emit_stage(emitter: EventEmitter, stage: str, payload: Optional[dict] = None) -> None:

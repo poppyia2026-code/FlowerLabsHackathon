@@ -25,7 +25,7 @@ from poppy_orchestrator.contracts.claims import (
     HitlAction,
     HitlDecision,
 )
-from poppy_orchestrator.events.emit import EventEmitter, emit_text
+from poppy_orchestrator.events.emit import AUDIENCE_TRACE, EventEmitter, emit_text
 
 
 class HitlGate(ABC):
@@ -63,6 +63,7 @@ def _emit_hitl_request(emitter: EventEmitter, bundle: ClaimBundle) -> None:
         f"(provider={bundle.provider.provider_id}, "
         f"claims={len(bundle.all_claims())}, "
         f"missing={bundle.missing_nodes() or 'none'}).",
+        audience=AUDIENCE_TRACE,
     )
 
 

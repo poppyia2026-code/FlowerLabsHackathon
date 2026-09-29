@@ -1,36 +1,17 @@
 {
   "meta": {
     "synthetic": true,
-    "disclaimer": "Fake NPI-like ids and flags for Flower hackathon demo only. Not real providers. No live CAQH/NPDB/HIPAA data. SuperNode shards: fixtures/supernodes/<Node>/providers.json",
+    "node": "PayerEnrollment",
+    "disclaimer": "Synthetic PayerEnrollment shard for Flower hackathon. Claims only — no raw dossiers. Not real providers. No live CAQH/NPDB.",
     "updated": "2026-09-29",
-    "layout": "fixtures/supernodes/{HospitalCred,PayerEnrollment}/providers.json",
-    "node": "Orchestrator",
-    "f1_claims": [
-      "license_active",
-      "npi_enumerated",
-      "exclusion_clear",
-      "work_history_complete"
-    ]
+    "f1_claims": ["license_active", "npi_enumerated", "exclusion_clear"],
+    "layout": "fixtures/supernodes/PayerEnrollment/providers.json"
   },
   "providers": [
     {
       "provider_id": "SYNTH-NPI-1999999999",
       "display_name": "Synthetic Provider P (happy path)",
       "path": "happy",
-      "hospital_cred": {
-        "work_history_complete": {
-          "value": true,
-          "confidence": 0.98,
-          "evidence_ref": "fixture://hospital/work_history#P",
-          "notes": "Synth work-history shard complete"
-        },
-        "board_status": {
-          "value": "clear",
-          "confidence": 0.95,
-          "evidence_ref": "fixture://hospital/board#P",
-          "notes": "No board flags in synthetic set"
-        }
-      },
       "payer_enrollment": {
         "license_active": {
           "value": true,
@@ -62,20 +43,6 @@
       "provider_id": "SYNTH-NPI-1888888888",
       "display_name": "Synthetic Provider Q (HITL escalate path)",
       "path": "escalate",
-      "hospital_cred": {
-        "work_history_complete": {
-          "value": false,
-          "confidence": 0.7,
-          "evidence_ref": "fixture://hospital/work_history#Q",
-          "notes": "Gap in synth work history \u2014 escalate"
-        },
-        "board_status": {
-          "value": "flagged",
-          "confidence": 0.85,
-          "evidence_ref": "fixture://hospital/board#Q",
-          "notes": "Synthetic board flag for demo escalate path"
-        }
-      },
       "payer_enrollment": {
         "license_active": {
           "value": true,
@@ -93,7 +60,7 @@
           "value": false,
           "confidence": 0.8,
           "evidence_ref": "fixture://payer/exclusion#Q",
-          "notes": "Synth exclusion bit set \u2014 human must review"
+          "notes": "Synth exclusion bit set — human must review"
         },
         "enrollment_status": {
           "value": "pending",

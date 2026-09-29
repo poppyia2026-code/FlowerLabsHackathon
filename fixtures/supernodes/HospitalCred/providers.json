@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "synthetic": true,
+    "node": "HospitalCred",
+    "disclaimer": "Synthetic HospitalCred shard for Flower hackathon. Claims only — no raw dossiers. Not real providers. No live CAQH/NPDB.",
+    "updated": "2026-09-29",
+    "f1_claims": ["work_history_complete"],
+    "layout": "fixtures/supernodes/HospitalCred/providers.json"
+  },
+  "providers": [
+    {
+      "provider_id": "SYNTH-NPI-1999999999",
+      "display_name": "Synthetic Provider P (happy path)",
+      "path": "happy",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": true,
+          "confidence": 0.98,
+          "evidence_ref": "fixture://hospital/work_history#P",
+          "notes": "Synth work-history shard complete"
+        },
+        "board_status": {
+          "value": "clear",
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/board#P",
+          "notes": "No board flags in synthetic set"
+        }
+      }
+    },
+    {
+      "provider_id": "SYNTH-NPI-1888888888",
+      "display_name": "Synthetic Provider Q (HITL escalate path)",
+      "path": "escalate",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": false,
+          "confidence": 0.7,
+          "evidence_ref": "fixture://hospital/work_history#Q",
+          "notes": "Gap in synth work history — escalate"
+        },
+        "board_status": {
+          "value": "flagged",
+          "confidence": 0.85,
+          "evidence_ref": "fixture://hospital/board#Q",
+          "notes": "Synthetic board flag for demo escalate path"
+        }
+      }
+    }
+  ]
+}

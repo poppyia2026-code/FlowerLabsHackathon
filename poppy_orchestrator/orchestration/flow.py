@@ -33,6 +33,10 @@ from poppy_orchestrator.contracts.claims import (
 from poppy_orchestrator.events.emit import EventEmitter, emit_stage, emit_text
 from poppy_orchestrator.hitl.pause import HitlGate
 from poppy_orchestrator.receipts.emit import emit_receipt_after_approve
+from poppy_orchestrator.endeavor.summarize import (
+    endeavor_stage_payload,
+    summarize_claims_for_hitl,
+)
 
 # Ordered stages judges / Flower Chat can follow (F5 run-series).
 FLOW_STAGES: tuple[str, ...] = (
@@ -42,6 +46,7 @@ FLOW_STAGES: tuple[str, ...] = (
     "claim_request.PayerEnrollment",
     "claim_response.PayerEnrollment",
     "claims_aggregated",
+    "endeavor_assist",  # F11 optional — dry-run if no API key
     "hitl_pause",
     "claim_receipt",
     "complete",
@@ -107,6 +112,7 @@ class FlowResult:
             "hitl_pause_reached": self.hitl is not None,
             "stages": list(FLOW_STAGES),
             "synthetic": True,
+            "endeavor_optional": True,
         }
 
 
@@ -208,6 +214,15 @@ def run_credentialing_flow(
         payer=pay_resp,
     )
     emit_stage(emitter, "claims_aggregated", bundle.to_dict())
+
+    # --- F11 Endeavor assist on Orchestrator (optional; dry-run without key) ---
+    endeavor = summarize_claims_for_hitl(bundle)
+    emit_stage(emitter, "endeavor_assist", endeavor_stage_payload(endeavor))
+    mode_tag = "LIVE" if endeavor.live_call else "DRY-RUN (endeavor_optional)"
+    emit_text(
+        emitter,
+        f"Endeavor assist [{mode_tag}] on PoppyOrchestrator: {endeavor.text[:280]}",
+    )
 
     # --- HITL (mandatory — never silent skip) ---
     emit_stage(

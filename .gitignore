@@ -17,3 +17,6 @@ keys/
 .flwr-local/
 runtime-data/
 runtime-logs/
+
+# Local per-machine Docker settings (model provider, keys via environment)
+compose.override.yaml

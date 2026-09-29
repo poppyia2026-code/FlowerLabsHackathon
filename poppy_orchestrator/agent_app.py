@@ -1,11 +1,16 @@
-"""Flower AgentApp entrypoint for PoppyOrchestrator (F5).
+"""Flower AgentApp entrypoint for PoppyOrchestrator (F0 Grid tools + F5 kickoff).
 
 AgentApp-only FAB (see pyproject.toml [tool.flwr.app.components]).
 Do NOT add ServerApp/ClientApp to this bundle.
 
+F0: agent.grid get_nodes → push_messages → pull_messages between
+    Orchestrator ↔ HospitalCred / PayerEnrollment (judge-visible).
+F5: kickoff credential P for network X → HITL → receipt.
+
 Live path requires SuperGrid credentials + Leandro SuperNodes + Franco HITL.
 Local dry-run / CLI:
   python -m poppy_orchestrator
+  python scripts/run_f0_grid.py
   python scripts/run_f5.py
   python scripts/dry_run.py
 """
@@ -28,6 +33,8 @@ from poppy_orchestrator.orchestration.flow import (
     OrchestratorConfig,
     run_credentialing_flow,
 )
+from poppy_orchestrator.grid.fake_grid import FakeAgentGrid
+from poppy_orchestrator.grid.handoff import GridHandoffResult, run_grid_role_handoff
 
 # ---------------------------------------------------------------------------
 # Flower AgentApp registration (best-effort if flwr.agentapp is available)
@@ -127,6 +134,33 @@ def kickoff_credentialing(
     )
 
 
+
+def run_f0_grid_handoff(
+    *,
+    grid: Any = None,
+    provider_id: str = "SYNTH-NPI-1999999999",
+    network_id: str = "SYNTH-NETWORK-X",
+    emitter: Optional[EventEmitter] = None,
+    sample_size: Optional[int] = None,
+    pull_timeout: float = 0.0,
+) -> GridHandoffResult:
+    """F0: Collaborative AgentApp Grid tools handoff (≥2 roles).
+
+    Uses live ``agent.grid`` when provided; otherwise FakeAgentGrid synthetic
+    HospitalCred + PayerEnrollment nodes (local / unit tests).
+    """
+    if grid is None:
+        grid = FakeAgentGrid()
+    return run_grid_role_handoff(
+        grid,
+        provider_id=provider_id,
+        network_id=network_id,
+        sample_size=sample_size,
+        pull_timeout=pull_timeout,
+        emitter=emitter,
+    )
+
+
 @app.main()
 def main(agent: Any, context: Any) -> None:
     """AgentApp main — invoked by Flower SuperGrid / SuperLink runtime."""
@@ -147,6 +181,31 @@ def main(agent: Any, context: Any) -> None:
     run_id = str(getattr(context, "run_id", "") or "") or None
 
     emitter = flower_emitter_from_session(agent)
+
+    # --- F0 Collaborative AgentApp Grid tools (≥2 roles) ---
+    # Prefer live agent.grid on SuperGrid; fall back to FakeAgentGrid in fixtures.
+    grid_enabled = str(run_config.get("grid-handoff", "true")).lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    grid_handoff: Optional[GridHandoffResult] = None
+    if grid_enabled:
+        live_grid = getattr(agent, "grid", None)
+        grid_handoff = run_f0_grid_handoff(
+            grid=live_grid,
+            provider_id=provider_id,
+            network_id=network_id,
+            emitter=emitter,
+            sample_size=2,
+            pull_timeout=float(run_config.get("grid-pull-timeout", 30) or 30),
+        )
+        if not grid_handoff.ok and live_grid is not None:
+            # Live Grid without expected roles — fail closed for score path.
+            raise RuntimeError(
+                f"F0 Grid handoff failed: {grid_handoff.error}. "
+                "Ensure HospitalCred + PayerEnrollment SuperNodes are in the federation."
+            )
 
     # --- SuperNode clients ---
     # TODO LEANDRO: when fixture_mode is false, swap stubs for Real* clients
@@ -192,5 +251,7 @@ def main(agent: Any, context: Any) -> None:
             state["privcred_run_id"] = result.run_id
             if result.receipt:
                 state["privcred_receipt_id"] = result.receipt.receipt_id
+            if grid_handoff is not None:
+                state["privcred_grid_handoff"] = grid_handoff.to_summary()
         except Exception:
             pass

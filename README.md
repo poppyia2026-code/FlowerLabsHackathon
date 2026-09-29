@@ -52,3 +52,14 @@ python -m unittest tests.test_f5_kickoff -v
 ```
 
 AgentApp-only FAB (`poppy_orchestrator.agent_app:app`). Synthetic fixtures only.
+
+## F1 claim fixtures (synthetic)
+
+Typed claims: `license_active`, `npi_enumerated`, `exclusion_clear`, `work_history_complete`.
+
+```bash
+python -m pytest tests/test_f1_claim_fixtures.py -v
+```
+
+SuperNode layout for Leandro: `docs/f1-fixtures.md` → `fixtures/supernodes/{HospitalCred,PayerEnrollment}/`.
+

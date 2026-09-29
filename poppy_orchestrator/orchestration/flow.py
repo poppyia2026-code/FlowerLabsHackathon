@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 import json
 import os
 import uuid
@@ -55,8 +55,8 @@ from poppy_orchestrator.endeavor.summarize import (
 FLOW_STAGES: tuple[str, ...] = (
     "kickoff",
     "claim_request.HospitalCred",
-    "claim_response.HospitalCred",
     "claim_request.PayerEnrollment",
+    "claim_response.HospitalCred",
     "claim_response.PayerEnrollment",
     "claims_aggregated",
     "endeavor_assist",  # F11 optional — dry-run if no API key
@@ -147,6 +147,9 @@ def run_credentialing_flow(
     hitl_gate: HitlGate,
     emitter: EventEmitter,
     config: OrchestratorConfig,
+    collect_claims: Optional[
+        Callable[[dict[str, ClaimRequest]], dict[str, ClaimResponse]]
+    ] = None,
 ) -> FlowResult:
     """F5 path: kickoff → both SuperNode claims → HITL → receipt."""
     run_id = config.run_id or f"run-{uuid.uuid4().hex[:12]}"
@@ -182,7 +185,20 @@ def run_credentialing_flow(
         source_node="HospitalCred",
     )
     emit_stage(emitter, "claim_request.HospitalCred", hosp_req.to_dict())
-    hosp_resp = hospital.request_claims(hosp_req)
+    pay_req = ClaimRequest(
+        request_id=new_request_id("pay"),
+        provider=provider,
+        claim_types=tuple(sorted(PAYER_ENROLLMENT_CLAIMS)),
+        source_node="PayerEnrollment",
+    )
+    emit_stage(emitter, "claim_request.PayerEnrollment", pay_req.to_dict())
+    if collect_claims is not None:
+        replies = collect_claims({"HospitalCred": hosp_req, "PayerEnrollment": pay_req})
+        hosp_resp, pay_resp = replies["HospitalCred"], replies["PayerEnrollment"]
+    else:
+        # Local stubs need no network batching; retain the existing client contract.
+        hosp_resp = hospital.request_claims(hosp_req)
+        pay_resp = payer.request_claims(pay_req)
     emit_stage(emitter, "claim_response.HospitalCred", hosp_resp.to_dict())
     hosp_errs = validate_claim_response(
         hosp_resp,
@@ -204,14 +220,6 @@ def run_credentialing_flow(
             )
 
     # --- PayerEnrollment ---
-    pay_req = ClaimRequest(
-        request_id=new_request_id("pay"),
-        provider=provider,
-        claim_types=tuple(sorted(PAYER_ENROLLMENT_CLAIMS)),
-        source_node="PayerEnrollment",
-    )
-    emit_stage(emitter, "claim_request.PayerEnrollment", pay_req.to_dict())
-    pay_resp = payer.request_claims(pay_req)
     emit_stage(emitter, "claim_response.PayerEnrollment", pay_resp.to_dict())
     pay_errs = validate_claim_response(
         pay_resp,

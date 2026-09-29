@@ -18,6 +18,7 @@ from poppy_orchestrator.contracts.claims import (
     ClaimRequest,
     ClaimResponse,
     claim_response_from_dict,
+    new_request_id,
 )
 from poppy_orchestrator.grid.fake_grid import FakeAgentGrid
 from poppy_orchestrator.grid.roles import ROLE_HOSPITAL_CRED, ROLE_PAYER_ENROLLMENT
@@ -43,151 +44,152 @@ class PullBudget:
 PullTimeout = Union[float, Callable[[], float]]
 
 
-def _find_node(grid: Any, role: str) -> Optional[dict[str, Any]]:
-    out = grid.call(
-        {
-            "name": "get_nodes",
-            "call_id": f"claim-fetch-{role}",
-            "arguments": {"sample_size": None},
-        }
+def _output(grid: Any, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    result = grid.call({"name": name, "call_id": new_request_id(f"claims-{name}"),
+                        "arguments": arguments})
+    data = result["output"]
+    data = json.loads(data) if isinstance(data, str) else data
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid {name} output")
+    return data
+
+
+def _failure(role: str, request: ClaimRequest, error: str) -> ClaimResponse:
+    return ClaimResponse(
+        request_id=request.request_id,
+        source_node=role,
+        provider_id=request.provider.provider_id,
+        claims=(), ok=False, error=error, synthetic=True,
     )
-    raw = out.get("output", "{}")
-    data = json.loads(raw) if isinstance(raw, str) else raw
-    matches = []
-    for node in data.get("nodes") or []:
-        name = (node.get("name") or "").strip()
-        if name.lower() == role.lower():
-            matches.append(node)
-    if len(matches) > 1:
-        raise ValueError(f"Ambiguous Grid role: {role}")
-    return matches[0] if matches else None
 
 
-def fetch_claim_response_via_grid(
-    grid: Any,
-    role: str,
-    request: ClaimRequest,
-    *,
-    pull_timeout: PullTimeout = 30.0,
-) -> ClaimResponse:
-    """Push ClaimRequest-shaped payload to role node; pull ClaimResponse."""
-    try:
-        return _fetch_claim_response(grid, role, request, pull_timeout=pull_timeout)
-    except (KeyError, TypeError, ValueError, RuntimeError, TimeoutError, OSError) as exc:
-        return ClaimResponse(
-            request_id=request.request_id,
-            source_node=role,
-            provider_id=request.provider.provider_id,
-            claims=(),
-            ok=False,
-            error=f"Grid verification failed: {exc}",
-            synthetic=True,
-        )
-
-
-def _fetch_claim_response(
-    grid: Any, role: str, request: ClaimRequest, *, pull_timeout: PullTimeout
-) -> ClaimResponse:
-    node = _find_node(grid, role)
-    if node is None:
-        return ClaimResponse(
-            request_id=request.request_id,
-            source_node=role,
-            provider_id=request.provider.provider_id,
-            claims=(),
-            ok=False,
-            error=f"Grid role not found: {role}",
-            synthetic=True,
-        )
-
+def _instruction(role: str, request: ClaimRequest) -> str:
     message: dict[str, Any] = {
-        "from": "PoppyOrchestrator",
-        "to": role,
+        "from": "PoppyOrchestrator", "to": role,
         "intent": "request_verification_claims",
         "provider_id": request.provider.provider_id,
         "network_id": request.provider.network_id,
         "claim_types": list(request.claim_types),
-        "request_id": request.request_id,
-        "synthetic": True,
+        "request_id": request.request_id, "synthetic": True,
     }
     if request.recheck is not None:
         message["recheck"] = request.recheck.to_dict()
-    payload = json.dumps(message, separators=(",", ":"))
-    push = grid.call(
-        {
-            "name": "push_messages",
-            "call_id": f"claim-push-{role}",
-            "arguments": {
-                "messages": [
-                    {
-                        "dst_node_id": str(node["id"]),
-                        "payload": payload,
-                        "reply_to_message_id": None,
-                    }
-                ]
-            },
-        }
-    )
-    push_out = json.loads(push["output"]) if isinstance(push["output"], str) else push["output"]
-    results = push_out.get("results") or []
-    if not results or not results[0].get("message_id"):
-        return ClaimResponse(
-            request_id=request.request_id,
-            source_node=role,
-            provider_id=request.provider.provider_id,
-            claims=(),
-            ok=False,
-            error="Grid push_messages failed",
-            synthetic=True,
-        )
-    mid = results[0]["message_id"]
-    pull = grid.call(
-        {
-            "name": "pull_messages",
-            "call_id": f"claim-pull-{role}",
-            "arguments": {
-                "message_ids": [mid],
-                "timeout": pull_timeout() if callable(pull_timeout) else pull_timeout,
-            },
-        }
-    )
-    pull_out = json.loads(pull["output"]) if isinstance(pull["output"], str) else pull["output"]
-    messages = pull_out.get("messages") or []
-    if len(messages) != 1:
-        raise ValueError("Expected one node reply; verification is pending or ambiguous")
+    return json.dumps(message, separators=(",", ":"))
 
-    message = messages[0]
+
+def _read_reply(
+    message: dict[str, Any], role: str, request: ClaimRequest, node_id: str,
+) -> ClaimResponse:
     if message.get("error"):
         raise ValueError(f"Node returned an error: {message['error']}")
-    if message.get("reply_to_message_id") != mid:
-        raise ValueError("Reply does not match the requested message")
-    if str(message.get("src_node_id")) != str(node["id"]):
+    if str(message.get("src_node_id")) != node_id:
         raise ValueError("Reply came from a different node")
+    data = message.get("payload")
+    data = json.loads(data) if isinstance(data, str) else data
+    if not isinstance(data, dict):
+        raise ValueError("Reply must be a JSON object")
+    if data.get("request_id") != request.request_id:
+        raise ValueError("Reply request_id mismatch")
+    if data.get("provider_id") != request.provider.provider_id:
+        raise ValueError("Reply provider_id mismatch")
+    if data.get("source_node") != role:
+        raise ValueError("Reply role mismatch")
+    if data.get("synthetic") is not True or not isinstance(data.get("ok"), bool):
+        raise ValueError("Reply must declare boolean synthetic and ok fields")
+    return claim_response_from_dict(data)
 
-    reply_payload = messages[0].get("payload") or "{}"
+
+_TRANSPORT_ERRORS = (KeyError, TypeError, ValueError, RuntimeError, TimeoutError, OSError)
+
+
+def fetch_claim_responses_via_grid(
+    grid: Any, requests: dict[str, ClaimRequest], *, pull_timeout: PullTimeout = 30.0,
+) -> dict[str, ClaimResponse]:
+    """Dispatch independent requests together, then correlate replies by message ID.
+
+    The Grid client is used on one thread. Workers can execute concurrently;
+    there is one node lookup, one push and one shared wait for the first round.
+    Missing/invalid replies remain failures, while valid peers are preserved.
+    """
+    responses: dict[str, ClaimResponse] = {}
+    if not requests:
+        return responses
     try:
-        data = json.loads(reply_payload) if isinstance(reply_payload, str) else reply_payload
-        if not isinstance(data, dict):
-            raise ValueError("Reply must be a JSON object")
-        if data.get("request_id") != request.request_id:
-            raise ValueError("Reply request_id mismatch")
-        if data.get("provider_id") != request.provider.provider_id:
-            raise ValueError("Reply provider_id mismatch")
-        if data.get("source_node") != role:
-            raise ValueError("Reply role mismatch")
-        if data.get("synthetic") is not True or not isinstance(data.get("ok"), bool):
-            raise ValueError("Reply must declare boolean synthetic and ok fields")
-        return claim_response_from_dict(data)
-    except (json.JSONDecodeError, TypeError, KeyError, ValueError) as exc:
-        return ClaimResponse(
-            request_id=request.request_id,
-            source_node=role,
-            provider_id=request.provider.provider_id,
-            claims=(),
-            ok=False,
-            error=f"invalid Grid claim reply: {exc}",
-            synthetic=True,
-        )
+        nodes = _output(grid, "get_nodes", {"sample_size": None}).get("nodes")
+        if not isinstance(nodes, list) or any(not isinstance(n, dict) for n in nodes):
+            raise ValueError("Invalid Grid node list")
+        selected: dict[str, str] = {}
+        for role, request in requests.items():
+            matches = [n for n in nodes if str(n.get("name") or "").strip().lower() == role.lower()]
+            if len(matches) != 1 or not matches[0].get("id"):
+                responses[role] = _failure(role, request, f"Grid role missing or ambiguous: {role}")
+            else:
+                selected[role] = str(matches[0]["id"])
+        if len(set(selected.values())) != len(selected):
+            raise ValueError("Distinct roles must resolve to distinct Grid nodes")
+        if not selected:
+            return responses
+
+        roles = list(selected)
+        pushed = _output(grid, "push_messages", {"messages": [
+            {"dst_node_id": selected[role], "payload": _instruction(role, requests[role]),
+             "reply_to_message_id": None}
+            for role in roles
+        ]}).get("results")
+        # Flower returns push results in request order, but pull replies are unordered.
+        if not isinstance(pushed, list) or len(pushed) != len(roles):
+            raise ValueError("Grid returned an unexpected number of push results")
+        accepted: dict[str, str] = {}
+        for role, result in zip(roles, pushed):
+            if not isinstance(result, dict):
+                raise ValueError("Invalid Grid push result")
+            mid = result.get("message_id")
+            if result.get("error") or not isinstance(mid, str) or not mid:
+                responses[role] = _failure(role, requests[role], "Grid push_messages failed")
+            elif mid in accepted:
+                raise ValueError("Grid returned duplicate message IDs")
+            else:
+                accepted[mid] = role
+        if not accepted:
+            return responses
+
+        pulled = _output(grid, "pull_messages", {
+            "message_ids": list(accepted),
+            "timeout": pull_timeout() if callable(pull_timeout) else pull_timeout,
+        })
+        messages = pulled.get("messages")
+        pending = pulled.get("pending_message_ids", [])
+        if not isinstance(messages, list) or not isinstance(pending, list):
+            raise ValueError("Invalid Grid pull result")
+        by_id: dict[str, list[dict[str, Any]]] = {mid: [] for mid in accepted}
+        for message in messages:
+            if not isinstance(message, dict):
+                raise ValueError("Invalid Grid reply")
+            mid = message.get("reply_to_message_id")
+            if not isinstance(mid, str) or mid not in accepted:
+                raise ValueError("Reply does not match any requested message")
+            by_id[mid].append(message)
+        for mid, role in accepted.items():
+            request = requests[role]
+            try:
+                if len(by_id[mid]) != 1 or mid in pending:
+                    raise ValueError("Expected one node reply; verification is pending or ambiguous")
+                responses[role] = _read_reply(by_id[mid][0], role, request, selected[role])
+            except _TRANSPORT_ERRORS as exc:
+                responses[role] = _failure(role, request, f"Grid verification failed: {exc}")
+    except _TRANSPORT_ERRORS as exc:
+        for role, request in requests.items():
+            responses.setdefault(role, _failure(role, request, f"Grid verification failed: {exc}"))
+    return responses
+
+
+def fetch_claim_response_via_grid(
+    grid: Any, role: str, request: ClaimRequest, *, pull_timeout: PullTimeout = 30.0,
+) -> ClaimResponse:
+    """Single-node follow-ups use the same validation and shared time budget."""
+    return fetch_claim_responses_via_grid(
+        grid, {role: request}, pull_timeout=pull_timeout,
+    )[role]
 
 
 class GridHospitalCredClient(SuperNodeClaimClient):

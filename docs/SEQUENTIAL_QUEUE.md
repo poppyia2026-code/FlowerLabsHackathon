@@ -1,5 +1,5 @@
 # RushPoppy sequential eng loop queue
-Status · 2026-09-29 ~12:22 PT
+Status · 2026-09-29 ~13:11 PT
 
 ## Merged
 - PR #1 F6 (FLOWER-8) Done
@@ -12,36 +12,28 @@ Status · 2026-09-29 ~12:22 PT
 - PR #8 F2/F3 scaffolds + G1 + G3 (FLOWER-9/12/16/19) **Merged**
 - PR #9 F11 Endeavor + F9 E2E + H1/H2 (FLOWER-7/14/17/18) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/9
 - PR #10 H3/H5 + H4 backlog notes (FLOWER-24/21/22/25/27/26/28/29) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/10
+- PR #11 queue status flip after #10 **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/11
+- PR #13 F15 role-aware AgentApp (FLOWER-31) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/13 — Franco patch; local FakeAgentGrid green; live SuperGrid still needs Leandro FLOWER-10
+
+## Also Done (separate landing)
+- FLOWER-15 E1 landing — https://privcred-landing.vercel.app (verified ~12:30 PT; hero + Hub shell + banned-phrase QA)
 
 ## Pointer
-**Human-gated remaining:** FLOWER-5 Hub+Typeform → FLOWER-10 live ≥2 SuperNodes (Leandro) → FLOWER-20 G2 dress rehearsal (Leandro+Franco).  
-**CoS code/docs:** no further CoS-doable business tickets after PR #10. FLOWER-30 eng loop stays In Progress with PR 1–10 summary.
+**13:04–13:30 PT fire:** FLOWER-31 / F15 role-aware AgentApp merged **PR #13** (`4c16f62`). pytest **92 passed**. Live SuperGrid verify blocked on Leandro / FLOWER-10 — do not fake success.
+**Next CoS candidates:** F32 (F14 chat-HITL — draft PR #12 Martin) · F33 (F12 conflicting claims) · F35.
+**Human-gated remaining:** FLOWER-5 Hub+Typeform → FLOWER-10 live ≥2 SuperNodes (Leandro) → FLOWER-20 G2 dress rehearsal (Leandro+Franco).
+**main @** `4c16f62`+
 
-## Sequence remaining (CoS-first)
-1. ~~FLOWER-11 F1 fixtures~~ **Done** PR #5
-2. ~~FLOWER-13 F8 receipt~~ **Done** PR #6
-3. ~~FLOWER-3 F7 HITL panel~~ **Done** PR #7
-4. ~~FLOWER-9/12 F2/F3 SuperNode scaffolds~~ **Done** PR #8 — live Grid = FLOWER-10
-5. ~~FLOWER-16 G1 runbook~~ **Done** PR #8
-6. ~~FLOWER-19 G3 fail-soft~~ **Done** PR #8
-7. ~~FLOWER-7 F11 Endeavor~~ **Done** PR #9 (`docs/f11-endeavor.md`)
-8. ~~FLOWER-14 E2E F9~~ **Done** PR #9 (local dry-run + tests; live dress = G2)
-9. ~~FLOWER-17 H1 tear-sheet~~ **Done** PR #9
-10. ~~FLOWER-18 H2 why-not-Symplr~~ **Done** PR #9
-11. ~~FLOWER-24 H3 Symplr callout~~ **Done** PR #10 (`docs/h3-symplr-callout.md`)
-12. ~~FLOWER-21 H5 payer one-pager~~ **Done** PR #10 (`docs/h5-payer-onepager.md`)
-13. ~~FLOWER-22/25/27/26/28/29 H4 backlog~~ **Done** PR #10 (`docs/backlog/`)
-14. FLOWER-5 F10 Hub+GitHub+Typeform — **needs human** (Luigi/Leandro); eng scaffolded checklist only — **do not Done**
-15. FLOWER-10 F4 live ≥2 SuperNodes (Leandro) — code ready; blocked on flwr login/register — **do not Done**
-16. FLOWER-20 G2 rehearsal (Leandro + Franco) — **do not Done**
-17. FLOWER-30 eng loop meta — stays **In Progress** (summary comment PRs 1–10)
+## Sequence remaining
+1. FLOWER-32 F14 HITL in Flower Chat (two-run) — candidate; Martin draft PR #12 related
+2. FLOWER-33 F12 conflicting-claims re-ask + escalate — candidate
+3. FLOWER-35 (if opened) — candidate
+4. FLOWER-5 F10 Hub+GitHub+Typeform — **needs human** — **do not Done**
+5. FLOWER-10 F4 live ≥2 SuperNodes (Leandro) — **do not Done**
+6. FLOWER-20 G2 rehearsal (Leandro + Franco) — **do not Done**
+7. FLOWER-30 eng loop meta — stays **In Progress**
 
 ## Notes
-- F9 Done = **local** `scripts/run_f9_e2e.py` + tests — **not** live SuperGrid. Live dress = G2 / Leandro+Franco.
-- F11: dry-run without key (`endeavor_optional`); confirm model id day-of in Slack if needed.
-- F10 (FLOWER-5): Hub/Typeform publish is human-gated — do not auto-Done.
-- Landing is separate repo — H3 callout copy in `docs/h3-symplr-callout.md` only (optional paste into privcred-landing).
-- Judge HITL demo: `python scripts/run_f7_hitl.py --serve` → http://127.0.0.1:8765/
-- E2E local: `python scripts/run_f9_e2e.py --hitl approve --budget-check`
-- G1: `docs/g1-demo-runbook.md` · G3: `docs/g3-failsoft.md` · F2/F3: `docs/f2-f3-supernodes.md`
+- Landing is separate repo — H3 callout copy in `docs/h3-symplr-callout.md` only.
 - Banned claims still in force: live CAQH/NPDB, HITRUST-as-ours, HIPAA-certified, 75% faster.
+- After 18:00 PT today, delete this routine.

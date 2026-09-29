@@ -30,6 +30,16 @@ class ClaimType(str, Enum):
 
 CLAIM_TYPES: tuple[str, ...] = tuple(c.value for c in ClaimType)
 
+# F1 (FLOWER-11) core typed claims — required for happy + escalate fixtures.
+F1_CORE_CLAIMS: frozenset[str] = frozenset(
+    {
+        ClaimType.LICENSE_ACTIVE.value,
+        ClaimType.NPI_ENUMERATED.value,
+        ClaimType.EXCLUSION_CLEAR.value,
+        ClaimType.WORK_HISTORY_COMPLETE.value,
+    }
+)
+
 HOSPITAL_CRED_CLAIMS: frozenset[str] = frozenset(
     {ClaimType.WORK_HISTORY_COMPLETE.value, ClaimType.BOARD_STATUS.value}
 )

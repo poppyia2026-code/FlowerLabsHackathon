@@ -24,7 +24,9 @@ from poppy_orchestrator.contracts.claims import (
 )
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 
-_FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "providers.json"
+_REPO = Path(__file__).resolve().parents[2]
+_FIXTURES = _REPO / "fixtures" / "supernodes" / "HospitalCred" / "providers.json"
+_FIXTURES_FALLBACK = _REPO / "fixtures" / "providers.json"
 
 
 class HospitalCredClient(Protocol):
@@ -44,7 +46,7 @@ class StubHospitalCredClient(SuperNodeClaimClient):
     node_name = "HospitalCred"
 
     def __init__(self, fixtures_path: Optional[Path] = None) -> None:
-        self._fixtures_path = fixtures_path or _FIXTURES
+        self._fixtures_path = fixtures_path or (_FIXTURES if _FIXTURES.is_file() else _FIXTURES_FALLBACK)
         self._providers = self._load()
 
     def _load(self) -> dict[str, Any]:

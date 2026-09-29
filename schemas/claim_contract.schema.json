@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://poppy.ai/schemas/privcred-claim-contract-v0.json",
+  "title": "PrivCred Claim Contract v0 (synthetic MVP)",
+  "description": "Request/response contract for PoppyOrchestrator \u2194 HospitalCred / PayerEnrollment. Claims only \u2014 no raw dossiers. No live CAQH/NPDB.",
+  "definitions": {
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "license_active",
+        "board_status",
+        "enrollment_status",
+        "npi_enumerated",
+        "exclusion_clear",
+        "work_history_complete"
+      ]
+    },
+    "provider_ref": {
+      "type": "object",
+      "required": [
+        "provider_id",
+        "network_id"
+      ],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "pattern": "^SYNTH-"
+        },
+        "network_id": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        }
+      }
+    },
+    "claim_decision": {
+      "type": "object",
+      "required": [
+        "claim_type",
+        "value"
+      ],
+      "properties": {
+        "claim_type": {
+          "$ref": "#/definitions/claim_type"
+        },
+        "value": {},
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "claim_request": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "provider",
+        "claim_types",
+        "source_node",
+        "synthetic"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/provider_ref"
+        },
+        "claim_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/claim_type"
+          },
+          "minItems": 1
+        },
+        "source_node": {
+          "type": "string",
+          "enum": [
+            "HospitalCred",
+            "PayerEnrollment"
+          ]
+        },
+        "requested_at": {
+          "type": "number"
+        },
+        "synthetic": {
+          "const": true
+        }
+      }
+    },
+    "claim_response": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "source_node",
+        "provider_id",
+        "claims",
+        "ok",
+        "synthetic"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string"
+        },
+        "source_node": {
+          "type": "string",
+          "enum": [
+            "HospitalCred",
+            "PayerEnrollment"
+          ]
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/claim_decision"
+          }
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "responded_at": {
+          "type": "number"
+        },
+        "synthetic": {
+          "const": true
+        }
+      }
+    },
+    "hitl_action": {
+      "type": "string",
+      "enum": [
+        "approve",
+        "escalate",
+        "reject"
+      ]
+    },
+    "claim_receipt": {
+      "type": "object",
+      "required": [
+        "receipt_id",
+        "run_id",
+        "provider",
+        "outcome",
+        "hitl",
+        "message",
+        "synthetic"
+      ],
+      "properties": {
+        "receipt_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/provider_ref"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "credentialed",
+            "escalated",
+            "rejected",
+            "failed",
+            "awaiting_hitl"
+          ]
+        },
+        "hitl": {
+          "type": "object",
+          "required": [
+            "action",
+            "actor"
+          ],
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/hitl_action"
+            },
+            "actor": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "decided_at": {
+              "type": "number"
+            }
+          }
+        },
+        "claims_snapshot": {
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        },
+        "issued_at": {
+          "type": "number"
+        },
+        "synthetic": {
+          "const": true
+        }
+      }
+    }
+  }
+}

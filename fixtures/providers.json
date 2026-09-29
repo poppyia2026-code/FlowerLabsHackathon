@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "synthetic": true,
+    "disclaimer": "Fake NPI-like ids and flags for Flower hackathon demo only. Not real providers. No live CAQH/NPDB/HIPAA data.",
+    "updated": "2026-09-29"
+  },
+  "providers": [
+    {
+      "provider_id": "SYNTH-NPI-1999999999",
+      "display_name": "Synthetic Provider P (happy path)",
+      "path": "happy",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": true,
+          "confidence": 0.98,
+          "evidence_ref": "fixture://hospital/work_history#P",
+          "notes": "Synth work-history shard complete"
+        },
+        "board_status": {
+          "value": "clear",
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/board#P",
+          "notes": "No board flags in synthetic set"
+        }
+      },
+      "payer_enrollment": {
+        "license_active": {
+          "value": true,
+          "confidence": 0.99,
+          "evidence_ref": "fixture://payer/license#P",
+          "notes": "Synth state license active"
+        },
+        "npi_enumerated": {
+          "value": true,
+          "confidence": 1.0,
+          "evidence_ref": "fixture://payer/npi#P",
+          "notes": "Fake NPI enumerated in synth registry"
+        },
+        "exclusion_clear": {
+          "value": true,
+          "confidence": 0.97,
+          "evidence_ref": "fixture://payer/exclusion#P",
+          "notes": "Synth OIG-like exclusion clear"
+        },
+        "enrollment_status": {
+          "value": "enrolled",
+          "confidence": 0.9,
+          "evidence_ref": "fixture://payer/enrollment#P",
+          "notes": "Synth enrolled in network X"
+        }
+      }
+    },
+    {
+      "provider_id": "SYNTH-NPI-1888888888",
+      "display_name": "Synthetic Provider Q (HITL escalate path)",
+      "path": "escalate",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": false,
+          "confidence": 0.7,
+          "evidence_ref": "fixture://hospital/work_history#Q",
+          "notes": "Gap in synth work history \u2014 escalate"
+        },
+        "board_status": {
+          "value": "flagged",
+          "confidence": 0.85,
+          "evidence_ref": "fixture://hospital/board#Q",
+          "notes": "Synthetic board flag for demo escalate path"
+        }
+      },
+      "payer_enrollment": {
+        "license_active": {
+          "value": true,
+          "confidence": 0.99,
+          "evidence_ref": "fixture://payer/license#Q",
+          "notes": "License still active"
+        },
+        "npi_enumerated": {
+          "value": true,
+          "confidence": 1.0,
+          "evidence_ref": "fixture://payer/npi#Q",
+          "notes": "Fake NPI enumerated"
+        },
+        "exclusion_clear": {
+          "value": false,
+          "confidence": 0.8,
+          "evidence_ref": "fixture://payer/exclusion#Q",
+          "notes": "Synth exclusion bit set \u2014 human must review"
+        },
+        "enrollment_status": {
+          "value": "pending",
+          "confidence": 0.75,
+          "evidence_ref": "fixture://payer/enrollment#Q",
+          "notes": "Enrollment pending"
+        }
+      }
+    }
+  ]
+}

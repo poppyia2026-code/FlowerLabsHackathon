@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "privcred-orchestrator"
+version = "0.1.0"
+description = "PoppyOrchestrator AgentApp — federated provider credentialing claims on Flower SuperGrid (synthetic MVP)"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11,<4.0"
+dependencies = [
+  # Flower Agent runtime — required for SuperGrid / flwr run.
+  # Dry-run script works without flwr installed (stdlib + fixtures only).
+  "flwr>=1.38.0,<2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["poppy_orchestrator"]
+
+[tool.flwr.app]
+publisher = "poppyai"
+display-name = "PrivCred PoppyOrchestrator"
+fab-format-version = 1
+flwr-version-target = "1.38.0"
+# AgentApp-only FAB — do NOT add serverapp/clientapp (Flower docs).
+fab-include = [
+  "poppy_orchestrator/**/*.py",
+  "schemas/**/*.json",
+  "fixtures/**/*.json",
+  "LICENSE",
+]
+
+[tool.flwr.app.components]
+agentapp = "poppy_orchestrator.agent_app:app"
+
+[tool.flwr.app.config]
+# Default kickoff — override with --run-config on flwr run / chat
+provider-id = "SYNTH-NPI-1999999999"
+network-id = "SYNTH-NETWORK-X"
+fixture-mode = "true"
+hitl-auto-approve-dry-run = "false"
+
+[tool.flwr.app.config.agent]
+input = "Credential synthetic provider SYNTH-NPI-1999999999 for network SYNTH-NETWORK-X"

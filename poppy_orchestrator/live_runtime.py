@@ -67,6 +67,10 @@ def _bundle_from_dict(data: dict[str, Any]) -> ClaimBundle:
     )
 
 
+def _worded(model: str | None) -> str:
+    return f" _(worded by {model})_" if model else ""
+
+
 def _conflict_rows(conflict: ClaimConflict) -> list[str]:
     dispute = conflict.dispute
     rows = [
@@ -74,13 +78,14 @@ def _conflict_rows(conflict: ClaimConflict) -> list[str]:
         f"- {conflict.owner} says: {conflict.asserted}",
         f"- {dispute.raised_by} sees: {dispute.observed}"
         + (f" for {dispute.period}" if dispute.period else "")
-        + (f". {dispute.reason}" if dispute.reason else ""),
+        + (f". {dispute.reason}" if dispute.reason else "")
+        + _worded(dispute.worded_by),
     ]
     if conflict.follow_up is None:
         rows.append(f"- {conflict.owner}, asked again: no usable answer")
     else:
         rows.append(f"- {conflict.owner}, asked again: {conflict.follow_up.value}. "
-                    f"{conflict.follow_up.notes}")
+                    f"{conflict.follow_up.notes}" + _worded(conflict.follow_up.worded_by))
     return rows
 
 

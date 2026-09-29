@@ -92,13 +92,17 @@ class ClaimDispute:
     period: str = ""
     reason: str = ""
     evidence_ref: Optional[str] = None
+    worded_by: Optional[str] = None  # model that worded `reason`, if any
 
     def __post_init__(self) -> None:
         if self.claim_type not in CLAIM_TYPES:
             raise ValueError(f"Unknown claim_type: {self.claim_type}")
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        out = asdict(self)
+        if self.worded_by is None:
+            del out["worded_by"]
+        return out
 
 
 @dataclass(frozen=True)
@@ -145,6 +149,7 @@ class ClaimDecision:
     notes: str = ""
     # Follow-up answers only: do the owner's records account for the dispute?
     resolves_dispute: Optional[bool] = None
+    worded_by: Optional[str] = None  # model that worded `notes`, if any
 
     def __post_init__(self) -> None:
         if self.claim_type not in CLAIM_TYPES:
@@ -154,8 +159,9 @@ class ClaimDecision:
 
     def to_dict(self) -> dict[str, Any]:
         out = asdict(self)
-        if self.resolves_dispute is None:
-            del out["resolves_dispute"]
+        for optional in ("resolves_dispute", "worded_by"):
+            if out[optional] is None:
+                del out[optional]
         return out
 
 
@@ -345,6 +351,7 @@ def claim_decision_from_dict(data: Mapping[str, Any]) -> ClaimDecision:
         evidence_ref=data.get("evidence_ref"),
         notes=data.get("notes", ""),
         resolves_dispute=data.get("resolves_dispute"),
+        worded_by=data.get("worded_by"),
     )
 
 
@@ -358,6 +365,7 @@ def claim_dispute_from_dict(
         period=str(data.get("period", "")),
         reason=str(data.get("reason", "")),
         evidence_ref=data.get("evidence_ref"),
+        worded_by=data.get("worded_by"),
     )
 
 

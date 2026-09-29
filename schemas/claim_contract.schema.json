@@ -62,7 +62,8 @@
         },
         "resolves_dispute": {
           "type": "boolean"
-        }
+        },
+        "worded_by": { "type": "string" }
       },
       "additionalProperties": false
     },
@@ -75,7 +76,8 @@
         "raised_by": { "type": "string" },
         "period": { "type": "string" },
         "reason": { "type": "string" },
-        "evidence_ref": { "type": ["string", "null"] }
+        "evidence_ref": { "type": ["string", "null"] },
+        "worded_by": { "type": "string" }
       },
       "additionalProperties": false
     },

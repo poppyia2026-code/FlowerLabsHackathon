@@ -64,6 +64,7 @@ class Federation:
         self.offline = offline
         self.replies: dict[str, dict[str, Any]] = {}
         self.files_read: dict[str, str] = {}
+        self.deliveries: list[tuple[str, dict[str, Any]]] = []
         self._count = 0
 
     def next_id(self) -> str:
@@ -76,6 +77,7 @@ class Federation:
             return
         data = ROOT / "fixtures" / "supernodes" / role / "providers.json"
         self.files_read[role] = str(data)
+        self.deliveries.append((role, json.loads(payload)))
         agent = SimpleNamespace(
             prompt=json.dumps(
                 {

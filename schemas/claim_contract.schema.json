@@ -59,7 +59,23 @@
         },
         "notes": {
           "type": "string"
+        },
+        "resolves_dispute": {
+          "type": "boolean"
         }
+      },
+      "additionalProperties": false
+    },
+    "claim_dispute": {
+      "type": "object",
+      "required": ["claim_type", "observed"],
+      "properties": {
+        "claim_type": { "$ref": "#/definitions/claim_type" },
+        "observed": {},
+        "raised_by": { "type": "string" },
+        "period": { "type": "string" },
+        "reason": { "type": "string" },
+        "evidence_ref": { "type": ["string", "null"] }
       },
       "additionalProperties": false
     },
@@ -98,7 +114,8 @@
         },
         "synthetic": {
           "const": true
-        }
+        },
+        "recheck": { "$ref": "#/definitions/claim_dispute" }
       },
       "additionalProperties": false
     },
@@ -146,6 +163,10 @@
         },
         "synthetic": {
           "const": true
+        },
+        "disputes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/claim_dispute" }
         }
       },
       "additionalProperties": false

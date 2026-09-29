@@ -13,7 +13,8 @@ from typing import Any
 
 from poppy_orchestrator.clients.grid_clients import GridHospitalCredClient, GridPayerEnrollmentClient
 from poppy_orchestrator.contracts.claims import (
-    ClaimBundle, HitlAction, HitlDecision, ProviderRef, claim_response_from_dict,
+    ClaimBundle, ClaimConflict, HitlAction, HitlDecision, ProviderRef,
+    claim_conflict_from_dict, claim_response_from_dict,
 )
 from poppy_orchestrator.events.emit import flower_emitter_from_session
 from poppy_orchestrator.hitl.pause import HitlGate, _emit_hitl_request
@@ -60,7 +61,25 @@ def _bundle_from_dict(data: dict[str, Any]) -> ClaimBundle:
         hospital=claim_response_from_dict(data["hospital"]) if data.get("hospital") else None,
         payer=claim_response_from_dict(data["payer"]) if data.get("payer") else None,
         collected_at=data["collected_at"],
+        conflicts=tuple(claim_conflict_from_dict(c) for c in data.get("conflicts", [])),
     )
+
+
+def _conflict_rows(conflict: ClaimConflict) -> list[str]:
+    dispute = conflict.dispute
+    rows = [
+        f"**Sources disagree on {conflict.claim_type}: {conflict.status}**",
+        f"- {conflict.owner} says: {conflict.asserted}",
+        f"- {dispute.raised_by} sees: {dispute.observed}"
+        + (f" for {dispute.period}" if dispute.period else "")
+        + (f". {dispute.reason}" if dispute.reason else ""),
+    ]
+    if conflict.follow_up is None:
+        rows.append(f"- {conflict.owner}, asked again: no usable answer")
+    else:
+        rows.append(f"- {conflict.owner}, asked again: {conflict.follow_up.value}. "
+                    f"{conflict.follow_up.notes}")
+    return rows
 
 
 def _review_text(bundle: ClaimBundle) -> str:
@@ -73,9 +92,15 @@ def _review_text(bundle: ClaimBundle) -> str:
             else:
                 rows.extend(f"- {response.source_node}: {c.claim_type} = {c.value}"
                             for c in response.claims)
-    rows.extend(["", "No receipt has been issued. Review the evidence, then send one command:",
-                 f"`/approve {bundle.run_id}`", f"`/escalate {bundle.run_id} reason`",
-                 f"`/reject {bundle.run_id} reason`"])
+    for conflict in bundle.conflicts:
+        rows.extend(["", *_conflict_rows(conflict)])
+    commands = [f"`/escalate {bundle.run_id} reason`", f"`/reject {bundle.run_id} reason`"]
+    if bundle.unresolved_conflicts():
+        rows.extend(["", "No receipt has been issued. Approval is not available while "
+                     "the sources disagree. Send one command:", *commands])
+    else:
+        rows.extend(["", "No receipt has been issued. Review the evidence, then send one "
+                     "command:", f"`/approve {bundle.run_id}`", *commands])
     return "\n".join(rows)
 
 
@@ -105,6 +130,10 @@ def run_live_agent(agent: Any, context: Any) -> None:
         if time.time() - bundle.collected_at > float(config.get("review-max-age-seconds", 600)):
             _save(context, {"status": "expired", "review_id": review_id})
             _reply(agent, "This review expired. Start a new verification to collect fresh claims.")
+            return
+        if action == "approve" and bundle.unresolved_conflicts():
+            _reply(agent, "The sources still disagree, so approval is not available. "
+                   "No decision was applied. Escalate or reject this review.")
             return
         hitl = HitlDecision(action=HitlAction(action), actor="flower-chat-reviewer", reason=reason or "")
         result = finalize_credentialing_flow(

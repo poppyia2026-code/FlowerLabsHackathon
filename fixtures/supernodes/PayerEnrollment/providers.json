@@ -69,6 +69,86 @@
           "notes": "Enrollment pending"
         }
       }
+    },
+    {
+      "provider_id": "SYNTH-NPI-1777777777",
+      "display_name": "Synthetic Provider R (sources disagree, explained)",
+      "path": "conflict",
+      "payer_enrollment": {
+        "license_active": {
+          "value": true,
+          "confidence": 0.99,
+          "evidence_ref": "fixture://payer/license#R",
+          "notes": "Synth state license active"
+        },
+        "npi_enumerated": {
+          "value": true,
+          "confidence": 1.0,
+          "evidence_ref": "fixture://payer/npi#R",
+          "notes": "Fake NPI enumerated in synth registry"
+        },
+        "exclusion_clear": {
+          "value": true,
+          "confidence": 0.97,
+          "evidence_ref": "fixture://payer/exclusion#R",
+          "notes": "Synth OIG-like exclusion clear"
+        },
+        "enrollment_status": {
+          "value": "pending",
+          "confidence": 0.8,
+          "evidence_ref": "fixture://payer/enrollment#R",
+          "notes": "Enrollment on hold until work history is settled"
+        }
+      },
+      "disputes": [
+        {
+          "claim_type": "work_history_complete",
+          "observed": false,
+          "period": "2021-03/2021-10",
+          "reason": "Enrollment application lists no practice location for 7 months",
+          "evidence_ref": "fixture://payer/application#R"
+        }
+      ]
+    },
+    {
+      "provider_id": "SYNTH-NPI-1666666666",
+      "display_name": "Synthetic Provider S (sources disagree, unresolved)",
+      "path": "conflict",
+      "payer_enrollment": {
+        "license_active": {
+          "value": true,
+          "confidence": 0.99,
+          "evidence_ref": "fixture://payer/license#S",
+          "notes": "Synth state license active"
+        },
+        "npi_enumerated": {
+          "value": true,
+          "confidence": 1.0,
+          "evidence_ref": "fixture://payer/npi#S",
+          "notes": "Fake NPI enumerated in synth registry"
+        },
+        "exclusion_clear": {
+          "value": true,
+          "confidence": 0.97,
+          "evidence_ref": "fixture://payer/exclusion#S",
+          "notes": "Synth OIG-like exclusion clear"
+        },
+        "enrollment_status": {
+          "value": "pending",
+          "confidence": 0.8,
+          "evidence_ref": "fixture://payer/enrollment#S",
+          "notes": "Enrollment on hold until work history is settled"
+        }
+      },
+      "disputes": [
+        {
+          "claim_type": "work_history_complete",
+          "observed": false,
+          "period": "2021-03/2021-10",
+          "reason": "Enrollment application lists no practice location for 7 months",
+          "evidence_ref": "fixture://payer/application#S"
+        }
+      ]
     }
   ]
 }

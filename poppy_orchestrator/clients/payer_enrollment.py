@@ -21,6 +21,7 @@ from poppy_orchestrator.contracts.claims import (
     ClaimDecision,
     ClaimRequest,
     ClaimResponse,
+    claim_dispute_from_dict,
 )
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 
@@ -108,6 +109,10 @@ class StubPayerEnrollmentClient(SuperNodeClaimClient):
             ok=True,
             responded_at=time.time(),
             synthetic=True,
+            disputes=tuple(
+                claim_dispute_from_dict(d, raised_by=self.node_name)
+                for d in provider.get("disputes", [])
+            ),
         )
 
 

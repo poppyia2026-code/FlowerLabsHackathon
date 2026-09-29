@@ -26,6 +26,7 @@ from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClien
 from poppy_orchestrator.clients.grid_clients import (
     GridHospitalCredClient,
     GridPayerEnrollmentClient,
+    HandoffReplyClient,
 )
 from poppy_orchestrator.events.emit import EventEmitter, flower_emitter_from_session
 from poppy_orchestrator.hitl.pause import (
@@ -40,6 +41,11 @@ from poppy_orchestrator.orchestration.flow import (
 )
 from poppy_orchestrator.grid.fake_grid import FakeAgentGrid
 from poppy_orchestrator.grid.handoff import GridHandoffResult, run_grid_role_handoff
+from poppy_orchestrator.grid.roles import ROLE_HOSPITAL_CRED, ROLE_PAYER_ENROLLMENT
+from poppy_orchestrator.supernodes.node_runtime import (
+    is_supernode_session,
+    run_supernode_role,
+)
 
 # ---------------------------------------------------------------------------
 # Flower AgentApp registration (best-effort if flwr.agentapp is available)
@@ -186,6 +192,11 @@ def run_f0_grid_handoff(
 @app.main()
 def main(agent: Any, context: Any) -> None:
     """AgentApp main — invoked by Flower SuperGrid / SuperLink runtime."""
+    # Same FAB component runs on the SuperLink and on every SuperNode.
+    if is_supernode_session(agent):
+        run_supernode_role(agent, context)
+        return
+
     run_config = getattr(context, "run_config", {}) or {}
     # Flower run_config values are often strings
     provider_id = str(run_config.get("provider-id", "SYNTH-NPI-1999999999"))
@@ -212,15 +223,15 @@ def main(agent: Any, context: Any) -> None:
         "yes",
     }
     grid_handoff: Optional[GridHandoffResult] = None
+    live_grid = getattr(agent, "grid", None) if grid_enabled else None
     if grid_enabled:
-        live_grid = getattr(agent, "grid", None)
         grid_handoff = run_f0_grid_handoff(
             grid=live_grid,
             provider_id=provider_id,
             network_id=network_id,
             emitter=emitter,
             sample_size=2,
-            pull_timeout=float(run_config.get("grid-pull-timeout", 30) or 30),
+            pull_timeout=float(run_config.get("grid-pull-timeout", 120) or 120),
         )
         if not grid_handoff.ok and live_grid is not None:
             # Live Grid without expected roles — fail closed for score path.
@@ -237,7 +248,18 @@ def main(agent: Any, context: Any) -> None:
             "fixture-mode=false but RealHospitalCredClient / RealPayerEnrollmentClient "
             "are not wired yet. TODO LEANDRO: implement and switch here."
         )
-    hospital, payer = build_stub_clients()
+    if live_grid is not None and grid_handoff is not None:
+        # Live federation: the claims are what the SuperNodes answered.
+        hospital = HandoffReplyClient(
+            ROLE_HOSPITAL_CRED,
+            grid_handoff.replies_by_role.get(ROLE_HOSPITAL_CRED),
+        )
+        payer = HandoffReplyClient(
+            ROLE_PAYER_ENROLLMENT,
+            grid_handoff.replies_by_role.get(ROLE_PAYER_ENROLLMENT),
+        )
+    else:
+        hospital, payer = build_stub_clients()
 
     # --- HITL gate ---
     # TODO FRANCO: replace with CallbackHitlGate(wait_fn=...) or Flower Chat gate.

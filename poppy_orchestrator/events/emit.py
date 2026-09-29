@@ -37,19 +37,35 @@ class NullEmitter:
         return
 
 
-def flower_emitter_from_session(agent: Any) -> EventEmitter:
-    """Adapt AgentSession.events to EventEmitter protocol.
+def to_flower_event(event: dict[str, Any]) -> dict[str, Any]:
+    """Shape a PrivCred envelope the way ``AgentSession.events.emit`` requires.
 
-    # TODO LEANDRO: confirm agent.events.emit accepts our PrivCred event envelopes
-    # when wiring live SuperGrid. Flower Chat consumes published events.
+    The Flower runtime rejects any event without a non-empty string ``type``.
+    Human-readable text goes out as a chat ``message`` so it shows up in
+    Flower Chat; every other envelope keeps its name as the ``type``.
     """
+    if isinstance(event.get("type"), str) and event["type"]:
+        return event
+    name = str(event.get("event") or "privcred.event")
+    data = event.get("data") or {}
+    if name == "privcred.message" and isinstance(data.get("text"), str):
+        return {
+            "type": "message",
+            "role": str(data.get("role") or "assistant"),
+            "content": data["text"],
+        }
+    return {"type": name, **event}
+
+
+def flower_emitter_from_session(agent: Any) -> EventEmitter:
+    """Adapt AgentSession.events to EventEmitter protocol."""
     events = getattr(agent, "events", None)
     if events is None:
         return NullEmitter()
 
     class _Adapter:
         def emit(self, event: dict[str, Any]) -> None:
-            events.emit(event)
+            events.emit(to_flower_event(event))
 
     return _Adapter()
 

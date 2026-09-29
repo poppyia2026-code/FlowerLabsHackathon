@@ -111,26 +111,69 @@ def fetch_claim_response_via_grid(
     pull_out = json.loads(pull["output"]) if isinstance(pull["output"], str) else pull["output"]
     messages = pull_out.get("messages") or []
     if not messages:
-        # Local fallback: serve from fixtures if Grid reply pending (scaffold).
-        raw = handle_inbound_message(role, payload)
-        return claim_response_from_dict(json.loads(raw))
+        if isinstance(grid, FakeAgentGrid):
+            # Local scaffold only: the fake grid has no real node to wait for.
+            raw = handle_inbound_message(role, payload)
+            return claim_response_from_dict(json.loads(raw))
+        # Live grid: a missing reply is a missing node, never local data.
+        return claim_response_from_grid_reply(role, request, None)
 
-    reply_payload = messages[0].get("payload") or "{}"
-    try:
-        data = json.loads(reply_payload) if isinstance(reply_payload, str) else reply_payload
-        # Prefer request_id from orchestrator request for trace continuity.
-        data["request_id"] = request.request_id
-        return claim_response_from_dict(data)
-    except (json.JSONDecodeError, TypeError, KeyError, ValueError) as exc:
+    return claim_response_from_grid_reply(role, request, messages[0])
+
+
+def claim_response_from_grid_reply(
+    role: str,
+    request: ClaimRequest,
+    reply: Optional[dict[str, Any]],
+) -> ClaimResponse:
+    """Turn one pulled Grid reply into a ClaimResponse (fail closed)."""
+
+    def failed(reason: str) -> ClaimResponse:
         return ClaimResponse(
             request_id=request.request_id,
             source_node=role,
             provider_id=request.provider.provider_id,
             claims=(),
             ok=False,
-            error=f"invalid Grid claim reply: {exc}",
+            error=reason,
             synthetic=True,
         )
+
+    if reply is None:
+        return failed(f"no Grid reply from {role}")
+    if reply.get("error"):
+        return failed(f"{role} replied with an error: {reply['error']}")
+    payload = reply.get("payload") or "{}"
+    try:
+        data = json.loads(payload) if isinstance(payload, str) else dict(payload)
+        if data.get("ok") is False and "request_id" not in data:
+            return failed(str(data.get("error") or f"{role} returned ok=false"))
+        # Prefer request_id from orchestrator request for trace continuity.
+        data["request_id"] = request.request_id
+        response = claim_response_from_dict(data)
+    except (json.JSONDecodeError, TypeError, KeyError, ValueError) as exc:
+        return failed(f"invalid Grid claim reply: {exc}")
+    if response.provider_id != request.provider.provider_id:
+        return failed(
+            f"{role} answered for provider {response.provider_id}, "
+            f"expected {request.provider.provider_id}"
+        )
+    return response
+
+
+class HandoffReplyClient(SuperNodeClaimClient):
+    """Claims taken from the replies of the Grid handoff that already ran.
+
+    Lets the credentialing flow use what the SuperNodes actually answered
+    instead of contacting them a second time or reading local fixtures.
+    """
+
+    def __init__(self, role: str, reply: Optional[dict[str, Any]]) -> None:
+        self.node_name = role
+        self._reply = reply
+
+    def request_claims(self, request: ClaimRequest) -> ClaimResponse:
+        return claim_response_from_grid_reply(self.node_name, request, self._reply)
 
 
 class GridHospitalCredClient(SuperNodeClaimClient):

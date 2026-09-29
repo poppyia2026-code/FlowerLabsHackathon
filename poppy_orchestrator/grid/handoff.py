@@ -24,6 +24,18 @@ from poppy_orchestrator.grid.roles import (
 )
 
 
+def emit_grid_event(
+    emitter: EventEmitter, name: str, data: dict[str, Any] | None = None
+) -> None:
+    """Judge-visible Grid tool event (privcred.grid.*)."""
+    emitter.emit(
+        {
+            "event": f"privcred.grid.{name}",
+            "data": {**(data or {}), "synthetic": True},
+        }
+    )
+
+
 class GridLike(Protocol):
     def tools(self) -> list[Any]: ...
 
@@ -146,6 +158,15 @@ def run_grid_role_handoff(
             "tool": "get_nodes",
         },
     )
+    emit_grid_event(
+        bus,
+        "get_nodes",
+        {
+            "num_available": nodes_out.get("num_available"),
+            "sampled": sampled,
+            "tool": "get_nodes",
+        },
+    )
 
     role_to_node: dict[str, dict[str, Any]] = {}
     missing: list[str] = []
@@ -229,6 +250,15 @@ def run_grid_role_handoff(
             "tool": "push_messages",
         },
     )
+    emit_grid_event(
+        bus,
+        "push",
+        {
+            "roles": list(role_to_node),
+            "results": push_results,
+            "tool": "push_messages",
+        },
+    )
 
     message_ids = [
         r["message_id"] for r in push_results if r.get("message_id")
@@ -251,11 +281,30 @@ def run_grid_role_handoff(
                 "tool": "pull_messages",
             },
         )
+        emit_grid_event(
+            bus,
+            "pull",
+            {
+                "replies": replies,
+                "pending": pull_out.get("pending_message_ids"),
+                "tool": "pull_messages",
+            },
+        )
 
     ok = len(replies) >= 2 and not missing
     emit_stage(
         bus,
         "grid.handoff.complete",
+        {
+            "ok": ok,
+            "roles_contacted": list(role_to_node),
+            "reply_count": len(replies),
+            "missing_roles": missing,
+        },
+    )
+    emit_grid_event(
+        bus,
+        "handoff",
         {
             "ok": ok,
             "roles_contacted": list(role_to_node),

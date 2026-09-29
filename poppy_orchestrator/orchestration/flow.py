@@ -20,6 +20,7 @@ from poppy_orchestrator.contracts.claims import (
     HOSPITAL_CRED_CLAIMS,
     PAYER_ENROLLMENT_CLAIMS,
     ClaimBundle,
+    ClaimConflict,
     ClaimReceipt,
     ClaimRequest,
     ClaimResponse,
@@ -212,6 +213,13 @@ def run_credentialing_flow(
         provider=provider,
         hospital=hosp_resp,
         payer=pay_resp,
+        conflicts=_recheck_disputed_claims(
+            owner=hospital,
+            owner_response=hosp_resp,
+            other_response=pay_resp,
+            provider=provider,
+            emitter=emitter,
+        ),
     )
     emit_stage(emitter, "claims_aggregated", bundle.to_dict())
 
@@ -269,6 +277,62 @@ def finalize_credentialing_flow(
     )
 
 
+def _recheck_disputed_claims(
+    *,
+    owner: SuperNodeClaimClient,
+    owner_response: ClaimResponse,
+    other_response: ClaimResponse,
+    provider: ProviderRef,
+    emitter: EventEmitter,
+) -> tuple[ClaimConflict, ...]:
+    """Second round: re-ask the owner once per claim the other node disputes."""
+    if not (owner_response.ok and other_response.ok):
+        return ()
+    conflicts: list[ClaimConflict] = []
+    for dispute in other_response.disputes:
+        first = owner_response.get(dispute.claim_type)
+        if first is None or first.value == dispute.observed:
+            continue
+        node = owner_response.source_node
+        emit_stage(
+            emitter,
+            "conflict_detected",
+            {"owner": node, "asserted": first.value, "dispute": dispute.to_dict()},
+        )
+        emit_text(
+            emitter,
+            f"Sources disagree on {dispute.claim_type}: {node} says {first.value!r}, "
+            f"{dispute.raised_by} sees {dispute.observed!r} "
+            f"({dispute.period or 'no period given'}). Asking {node} to look again.",
+        )
+        request = ClaimRequest(
+            request_id=new_request_id("recheck"),
+            provider=provider,
+            claim_types=(dispute.claim_type,),
+            source_node=node,
+            recheck=dispute,
+        )
+        emit_stage(emitter, f"claim_recheck_request.{node}", request.to_dict())
+        response = owner.request_claims(request)
+        emit_stage(emitter, f"claim_recheck_response.{node}", response.to_dict())
+        errors = validate_claim_response(
+            response, request.claim_types, allowed_for_node=HOSPITAL_CRED_CLAIMS
+        )
+        conflict = ClaimConflict(
+            claim_type=dispute.claim_type,
+            owner=node,
+            asserted=first.value,
+            dispute=dispute,
+            follow_up=None if errors else response.get(dispute.claim_type),
+        )
+        emit_text(
+            emitter,
+            f"{node} looked again at {dispute.claim_type}: {conflict.status}.",
+        )
+        conflicts.append(conflict)
+    return tuple(conflicts)
+
+
 def _map_outcome(hitl: HitlDecision, bundle: ClaimBundle) -> CredentialingOutcome:
     if hitl.action == HitlAction.REJECT:
         return CredentialingOutcome.REJECTED
@@ -276,5 +340,8 @@ def _map_outcome(hitl: HitlDecision, bundle: ClaimBundle) -> CredentialingOutcom
         return CredentialingOutcome.ESCALATED
     # Approve path: still fail closed if a node was missing
     if bundle.missing_nodes():
+        return CredentialingOutcome.FAILED
+    # ... or while two sources still disagree
+    if bundle.unresolved_conflicts():
         return CredentialingOutcome.FAILED
     return CredentialingOutcome.CREDENTIALED

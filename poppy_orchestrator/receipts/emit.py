@@ -58,7 +58,7 @@ def maybe_build_approve_receipt(
         outcome=outcome,
         hitl=hitl,
         claims_snapshot=[c.to_dict() for c in bundle.all_claims()],
-        message=APPROVE_ONLY_MESSAGE,
+        message=APPROVE_ONLY_MESSAGE + _conflict_note(bundle),
     )
     # Attach run-series for audit trail (extra field via to_dict enrichment)
     return receipt
@@ -79,6 +79,15 @@ def enrich_receipt_dict(
         "compliance_claims": None,  # explicit: we do not claim HITRUST/HIPAA-cert
     }
     return data
+
+
+def _conflict_note(bundle: ClaimBundle) -> str:
+    """Keep any disagreement between sources on the audit record."""
+    return "".join(
+        f" Dispute on {c.claim_type}: {c.dispute.raised_by} saw "
+        f"{c.dispute.observed!r}, {c.owner} asked again, {c.status}."
+        for c in bundle.conflicts
+    )
 
 
 def emit_receipt_after_approve(

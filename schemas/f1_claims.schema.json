@@ -24,6 +24,38 @@
       },
       "additionalProperties": false
     },
+    "dispute_entry": {
+      "type": "object",
+      "required": ["claim_type", "observed"],
+      "properties": {
+        "claim_type": { "$ref": "#/definitions/f1_claim_type" },
+        "observed": {},
+        "period": { "type": "string" },
+        "reason": { "type": "string" },
+        "evidence_ref": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "recheck_entry": {
+      "type": "object",
+      "required": ["value", "resolves_dispute"],
+      "properties": {
+        "value": {},
+        "resolves_dispute": { "type": "boolean" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence_ref": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "rechecks": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/recheck_entry" }
+    },
+    "disputes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/dispute_entry" }
+    },
     "hospital_cred_slice": {
       "type": "object",
       "required": ["work_history_complete"],
@@ -50,9 +82,11 @@
       "properties": {
         "provider_id": { "type": "string", "pattern": "^SYNTH-" },
         "display_name": { "type": "string", "minLength": 1 },
-        "path": { "type": "string", "enum": ["happy", "escalate"] },
+        "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
         "hospital_cred": { "$ref": "#/definitions/hospital_cred_slice" },
-        "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" }
+        "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" },
+        "rechecks": { "$ref": "#/definitions/rechecks" },
+        "disputes": { "$ref": "#/definitions/disputes" }
       },
       "additionalProperties": false
     },
@@ -108,8 +142,9 @@
             "properties": {
               "provider_id": { "type": "string", "pattern": "^SYNTH-" },
               "display_name": { "type": "string" },
-              "path": { "type": "string", "enum": ["happy", "escalate"] },
-              "hospital_cred": { "$ref": "#/definitions/hospital_cred_slice" }
+              "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
+              "hospital_cred": { "$ref": "#/definitions/hospital_cred_slice" },
+              "rechecks": { "$ref": "#/definitions/rechecks" }
             },
             "additionalProperties": false
           }
@@ -148,8 +183,9 @@
             "properties": {
               "provider_id": { "type": "string", "pattern": "^SYNTH-" },
               "display_name": { "type": "string" },
-              "path": { "type": "string", "enum": ["happy", "escalate"] },
-              "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" }
+              "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
+              "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" },
+              "disputes": { "$ref": "#/definitions/disputes" }
             },
             "additionalProperties": false
           }

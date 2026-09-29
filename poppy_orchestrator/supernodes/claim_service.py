@@ -19,9 +19,11 @@ from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClien
 from poppy_orchestrator.contracts.claims import (
     HOSPITAL_CRED_CLAIMS,
     PAYER_ENROLLMENT_CLAIMS,
+    ClaimDispute,
     ClaimRequest,
     ClaimResponse,
     ProviderRef,
+    claim_dispute_from_dict,
     new_request_id,
 )
 from poppy_orchestrator.grid.roles import (
@@ -57,6 +59,7 @@ def build_claim_request(
     provider_id: str = DEFAULT_PROVIDER,
     network_id: str = DEFAULT_NETWORK,
     claim_types: Optional[tuple[str, ...]] = None,
+    recheck: Optional[ClaimDispute] = None,
 ) -> ClaimRequest:
     types = claim_types or tuple(sorted(claim_types_for_role(role)))
     prefix = "hosp" if role == ROLE_HOSPITAL_CRED else "pay"
@@ -65,6 +68,7 @@ def build_claim_request(
         provider=ProviderRef(provider_id=provider_id, network_id=network_id),
         claim_types=types,
         source_node=role,
+        recheck=recheck,
     )
 
 
@@ -76,6 +80,7 @@ def serve_claims_for_role(
     claim_types: Optional[tuple[str, ...]] = None,
     hospital: Optional[StubHospitalCredClient] = None,
     payer: Optional[StubPayerEnrollmentClient] = None,
+    recheck: Optional[ClaimDispute] = None,
 ) -> ClaimResponse:
     """Serve typed F1 fixture claims for a SuperNode role (synthetic only)."""
     req = build_claim_request(
@@ -83,6 +88,7 @@ def serve_claims_for_role(
         provider_id=provider_id,
         network_id=network_id,
         claim_types=claim_types,
+        recheck=recheck,
     )
     if role == ROLE_HOSPITAL_CRED:
         client = hospital or StubHospitalCredClient()
@@ -118,17 +124,23 @@ def handle_inbound_message(
         claim_types = tuple(str(t) for t in raw_types)
 
     try:
+        raw_recheck = data.get("recheck")
         resp = serve_claims_for_role(
             role,
             provider_id=provider_id,
             network_id=network_id,
             claim_types=claim_types,
+            recheck=(
+                claim_dispute_from_dict(raw_recheck)
+                if isinstance(raw_recheck, dict)
+                else None
+            ),
             hospital=(StubHospitalCredClient(fixtures_path)
                       if fixtures_path is not None and role == ROLE_HOSPITAL_CRED else None),
             payer=(StubPayerEnrollmentClient(fixtures_path)
                    if fixtures_path is not None and role == ROLE_PAYER_ENROLLMENT else None),
         )
-    except ValueError as exc:
+    except (KeyError, ValueError) as exc:
         return json.dumps(
             {
                 "ok": False,

@@ -79,19 +79,19 @@ def _fetch_claim_response(
             synthetic=True,
         )
 
-    payload = json.dumps(
-        {
-            "from": "PoppyOrchestrator",
-            "to": role,
-            "intent": "request_verification_claims",
-            "provider_id": request.provider.provider_id,
-            "network_id": request.provider.network_id,
-            "claim_types": list(request.claim_types),
-            "request_id": request.request_id,
-            "synthetic": True,
-        },
-        separators=(",", ":"),
-    )
+    message: dict[str, Any] = {
+        "from": "PoppyOrchestrator",
+        "to": role,
+        "intent": "request_verification_claims",
+        "provider_id": request.provider.provider_id,
+        "network_id": request.provider.network_id,
+        "claim_types": list(request.claim_types),
+        "request_id": request.request_id,
+        "synthetic": True,
+    }
+    if request.recheck is not None:
+        message["recheck"] = request.recheck.to_dict()
+    payload = json.dumps(message, separators=(",", ":"))
     push = grid.call(
         {
             "name": "push_messages",

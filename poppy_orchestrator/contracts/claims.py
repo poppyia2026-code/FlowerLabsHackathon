@@ -6,6 +6,9 @@ Claim ownership (disjoint attribute slices):
   HospitalCred      → work_history_complete, board_status
   PayerEnrollment   → license_active, npi_enumerated, exclusion_clear, enrollment_status
 
+A node never answers a claim it does not own. It may raise a ClaimDispute
+against another node's claim; the Orchestrator then re-asks the owner once.
+
 TODO LEANDRO: keep SuperNode handlers aligned with these types.
 TODO FRANCO: HITL panel displays ClaimBundle fields.
 """
@@ -80,6 +83,25 @@ class ProviderRef:
 
 
 @dataclass(frozen=True)
+class ClaimDispute:
+    """One node's objection to a claim that another node owns."""
+
+    claim_type: str
+    observed: Any  # what the disputing node sees for that claim
+    raised_by: str = ""
+    period: str = ""
+    reason: str = ""
+    evidence_ref: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.claim_type not in CLAIM_TYPES:
+            raise ValueError(f"Unknown claim_type: {self.claim_type}")
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class ClaimRequest:
     """Orchestrator → SuperNode claim request."""
 
@@ -89,6 +111,7 @@ class ClaimRequest:
     source_node: str  # "HospitalCred" | "PayerEnrollment"
     requested_at: float = field(default_factory=lambda: time.time())
     synthetic: bool = True
+    recheck: Optional[ClaimDispute] = None  # set on the follow-up round only
 
     def __post_init__(self) -> None:
         unknown = [c for c in self.claim_types if c not in CLAIM_TYPES]
@@ -98,7 +121,7 @@ class ClaimRequest:
             raise ValueError("MVP allows synthetic=True only (no live CAQH/NPDB)")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "request_id": self.request_id,
             "provider": self.provider.to_dict(),
             "claim_types": list(self.claim_types),
@@ -106,6 +129,9 @@ class ClaimRequest:
             "requested_at": self.requested_at,
             "synthetic": self.synthetic,
         }
+        if self.recheck is not None:
+            out["recheck"] = self.recheck.to_dict()
+        return out
 
 
 @dataclass(frozen=True)
@@ -117,6 +143,8 @@ class ClaimDecision:
     confidence: float = 1.0
     evidence_ref: Optional[str] = None  # local fixture key — never raw file bytes
     notes: str = ""
+    # Follow-up answers only: do the owner's records account for the dispute?
+    resolves_dispute: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.claim_type not in CLAIM_TYPES:
@@ -125,7 +153,10 @@ class ClaimDecision:
             raise ValueError("confidence must be in [0, 1]")
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        out = asdict(self)
+        if self.resolves_dispute is None:
+            del out["resolves_dispute"]
+        return out
 
 
 @dataclass(frozen=True)
@@ -140,13 +171,14 @@ class ClaimResponse:
     error: Optional[str] = None
     responded_at: float = field(default_factory=lambda: time.time())
     synthetic: bool = True
+    disputes: tuple[ClaimDispute, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.synthetic:
             raise ValueError("MVP allows synthetic=True only (no live CAQH/NPDB)")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "request_id": self.request_id,
             "source_node": self.source_node,
             "provider_id": self.provider_id,
@@ -156,12 +188,51 @@ class ClaimResponse:
             "responded_at": self.responded_at,
             "synthetic": self.synthetic,
         }
+        if self.disputes:
+            out["disputes"] = [d.to_dict() for d in self.disputes]
+        return out
 
     def get(self, claim_type: str) -> Optional[ClaimDecision]:
         for c in self.claims:
             if c.claim_type == claim_type:
                 return c
         return None
+
+
+CONFLICT_AGREED = "agreed"  # the owner now reports what the other node saw
+CONFLICT_EXPLAINED = "explained"  # the owner's records account for the dispute
+CONFLICT_UNRESOLVED = "unresolved"
+
+
+@dataclass(frozen=True)
+class ClaimConflict:
+    """Two nodes disagree on one claim; holds the owner's follow-up answer."""
+
+    claim_type: str
+    owner: str
+    asserted: Any  # the owner's first answer
+    dispute: ClaimDispute
+    follow_up: Optional[ClaimDecision] = None
+
+    @property
+    def status(self) -> str:
+        if self.follow_up is None:
+            return CONFLICT_UNRESOLVED
+        if self.follow_up.value == self.dispute.observed:
+            return CONFLICT_AGREED
+        if self.follow_up.resolves_dispute is True:
+            return CONFLICT_EXPLAINED
+        return CONFLICT_UNRESOLVED
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "claim_type": self.claim_type,
+            "owner": self.owner,
+            "asserted": self.asserted,
+            "dispute": self.dispute.to_dict(),
+            "follow_up": self.follow_up.to_dict() if self.follow_up else None,
+            "status": self.status,
+        }
 
 
 @dataclass
@@ -173,6 +244,10 @@ class ClaimBundle:
     hospital: Optional[ClaimResponse]
     payer: Optional[ClaimResponse]
     collected_at: float = field(default_factory=lambda: time.time())
+    conflicts: tuple[ClaimConflict, ...] = ()
+
+    def unresolved_conflicts(self) -> list[ClaimConflict]:
+        return [c for c in self.conflicts if c.status == CONFLICT_UNRESOLVED]
 
     def all_claims(self) -> list[ClaimDecision]:
         out: list[ClaimDecision] = []
@@ -191,7 +266,7 @@ class ClaimBundle:
         return missing
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "run_id": self.run_id,
             "provider": self.provider.to_dict(),
             "hospital": self.hospital.to_dict() if self.hospital else None,
@@ -201,6 +276,9 @@ class ClaimBundle:
             "claims": [c.to_dict() for c in self.all_claims()],
             "synthetic": True,
         }
+        if self.conflicts:
+            out["conflicts"] = [c.to_dict() for c in self.conflicts]
+        return out
 
 
 @dataclass(frozen=True)
@@ -259,17 +337,43 @@ def claim_request_to_dict(req: ClaimRequest) -> dict[str, Any]:
     return req.to_dict()
 
 
-def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
-    claims = tuple(
-        ClaimDecision(
-            claim_type=c["claim_type"],
-            value=c["value"],
-            confidence=float(c.get("confidence", 1.0)),
-            evidence_ref=c.get("evidence_ref"),
-            notes=c.get("notes", ""),
-        )
-        for c in data.get("claims", [])
+def claim_decision_from_dict(data: Mapping[str, Any]) -> ClaimDecision:
+    return ClaimDecision(
+        claim_type=data["claim_type"],
+        value=data["value"],
+        confidence=float(data.get("confidence", 1.0)),
+        evidence_ref=data.get("evidence_ref"),
+        notes=data.get("notes", ""),
+        resolves_dispute=data.get("resolves_dispute"),
     )
+
+
+def claim_dispute_from_dict(
+    data: Mapping[str, Any], *, raised_by: str = ""
+) -> ClaimDispute:
+    return ClaimDispute(
+        claim_type=data["claim_type"],
+        observed=data["observed"],
+        raised_by=str(data.get("raised_by") or raised_by),
+        period=str(data.get("period", "")),
+        reason=str(data.get("reason", "")),
+        evidence_ref=data.get("evidence_ref"),
+    )
+
+
+def claim_conflict_from_dict(data: Mapping[str, Any]) -> ClaimConflict:
+    follow_up = data.get("follow_up")
+    return ClaimConflict(
+        claim_type=data["claim_type"],
+        owner=str(data["owner"]),
+        asserted=data["asserted"],
+        dispute=claim_dispute_from_dict(data["dispute"]),
+        follow_up=claim_decision_from_dict(follow_up) if follow_up else None,
+    )
+
+
+def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
+    claims = tuple(claim_decision_from_dict(c) for c in data.get("claims", []))
     if "synthetic" not in data:
         raise ValueError("claim response missing required field: synthetic")
     return ClaimResponse(
@@ -281,6 +385,10 @@ def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
         error=data.get("error"),
         responded_at=float(data.get("responded_at", time.time())),
         synthetic=bool(data["synthetic"]),
+        disputes=tuple(
+            claim_dispute_from_dict(d, raised_by=str(data["source_node"]))
+            for d in data.get("disputes", [])
+        ),
     )
 
 

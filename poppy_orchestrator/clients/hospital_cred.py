@@ -78,6 +78,9 @@ class StubHospitalCredClient(SuperNodeClaimClient):
             )
 
         hospital: Mapping[str, Any] = provider.get("hospital_cred", {})
+        if request.recheck is not None:
+            return self._recheck(request, hospital, provider.get("rechecks", {}))
+
         decisions: list[ClaimDecision] = []
         for claim_type in request.claim_types:
             if claim_type not in hospital:
@@ -105,6 +108,60 @@ class StubHospitalCredClient(SuperNodeClaimClient):
             source_node=self.node_name,
             provider_id=request.provider.provider_id,
             claims=tuple(decisions),
+            ok=True,
+            responded_at=time.time(),
+            synthetic=True,
+        )
+
+
+    def _recheck(
+        self,
+        request: ClaimRequest,
+        hospital: Mapping[str, Any],
+        rechecks: Mapping[str, Any],
+    ) -> ClaimResponse:
+        """Look again at one claim another node disputed.
+
+        Without a record for the disputed period the first answer stands and
+        is marked as not accounting for the dispute.
+        """
+        dispute = request.recheck
+        assert dispute is not None
+        claim_type = dispute.claim_type
+        first = hospital.get(claim_type)
+        if first is None:
+            return ClaimResponse(
+                request_id=request.request_id,
+                source_node=self.node_name,
+                provider_id=request.provider.provider_id,
+                claims=(),
+                ok=False,
+                error=f"fixture missing claim {claim_type}",
+            )
+        entry = rechecks.get(claim_type)
+        if entry is None:
+            decision = ClaimDecision(
+                claim_type=claim_type,
+                value=first["value"],
+                confidence=float(first.get("confidence", 1.0)),
+                evidence_ref=first.get("evidence_ref"),
+                notes=f"No additional record for {dispute.period or 'the disputed period'}",
+                resolves_dispute=False,
+            )
+        else:
+            decision = ClaimDecision(
+                claim_type=claim_type,
+                value=entry["value"],
+                confidence=float(entry.get("confidence", 1.0)),
+                evidence_ref=entry.get("evidence_ref"),
+                notes=entry.get("notes", ""),
+                resolves_dispute=bool(entry.get("resolves_dispute", False)),
+            )
+        return ClaimResponse(
+            request_id=request.request_id,
+            source_node=self.node_name,
+            provider_id=request.provider.provider_id,
+            claims=(decision,),
             ok=True,
             responded_at=time.time(),
             synthetic=True,

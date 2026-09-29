@@ -45,6 +45,62 @@
           "notes": "Synthetic board flag for demo escalate path"
         }
       }
+    },
+    {
+      "provider_id": "SYNTH-NPI-1777777777",
+      "display_name": "Synthetic Provider R (sources disagree, explained)",
+      "path": "conflict",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": true,
+          "confidence": 0.96,
+          "evidence_ref": "fixture://hospital/work_history#R",
+          "notes": "Synth work-history shard complete"
+        },
+        "board_status": {
+          "value": "clear",
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/board#R",
+          "notes": "No board flags in synthetic set"
+        }
+      },
+      "rechecks": {
+        "work_history_complete": {
+          "value": true,
+          "resolves_dispute": true,
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/leave#R",
+          "notes": "Documented leave 2021-03 to 2021-10, employment continuous"
+        }
+      }
+    },
+    {
+      "provider_id": "SYNTH-NPI-1666666666",
+      "display_name": "Synthetic Provider S (sources disagree, unresolved)",
+      "path": "conflict",
+      "hospital_cred": {
+        "work_history_complete": {
+          "value": true,
+          "confidence": 0.96,
+          "evidence_ref": "fixture://hospital/work_history#S",
+          "notes": "Synth work-history shard complete"
+        },
+        "board_status": {
+          "value": "clear",
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/board#S",
+          "notes": "No board flags in synthetic set"
+        }
+      },
+      "rechecks": {
+        "work_history_complete": {
+          "value": true,
+          "resolves_dispute": false,
+          "confidence": 0.6,
+          "evidence_ref": null,
+          "notes": "No record found for 2021-03 to 2021-10"
+        }
+      }
     }
   ]
 }

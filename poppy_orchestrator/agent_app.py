@@ -13,6 +13,7 @@ Local dry-run / CLI:
   python scripts/run_f0_grid.py
   python scripts/run_f5.py
   python scripts/dry_run.py
+  python scripts/run_f7_hitl.py --serve
 """
 
 from __future__ import annotations
@@ -77,11 +78,14 @@ def build_stub_clients() -> tuple[SuperNodeClaimClient, SuperNodeClaimClient]:
 def build_hitl_gate(*, mode: str = "auto") -> HitlGate:
     """HITL gate for local / AgentApp paths.
 
-    Modes: auto | approve (alias) | console.
-    Live demo must use Franco CallbackHitlGate — never silent skip.
+    Modes:
+      panel | console | cli — F7 claim review panel (never auto-approve)
+      auto | approve — dry-run AutoApprove ONLY (still emits privcred.hitl.request)
+
+    Live / judge demos: use panel/console or CallbackHitlGate — never silent skip.
     """
     normalized = (mode or "auto").lower()
-    if normalized in {"console", "cli"}:
+    if normalized in {"console", "cli", "panel"}:
         return ConsoleHitlGate()
     # auto / approve — dry-run AutoApprove still emits privcred.hitl.request
     return AutoApproveHitlGate()

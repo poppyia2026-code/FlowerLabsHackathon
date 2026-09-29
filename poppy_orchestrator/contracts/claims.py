@@ -18,6 +18,11 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Mapping, Optional, Sequence
+
+from poppy_orchestrator.contracts.privacy import (
+    PrivacySummary,
+    privacy_summary_from_dict,
+)
 import time
 import uuid
 
@@ -178,6 +183,7 @@ class ClaimResponse:
     responded_at: float = field(default_factory=lambda: time.time())
     synthetic: bool = True
     disputes: tuple[ClaimDispute, ...] = ()
+    privacy_summary: Optional[PrivacySummary] = None
 
     def __post_init__(self) -> None:
         if not self.synthetic:
@@ -196,6 +202,8 @@ class ClaimResponse:
         }
         if self.disputes:
             out["disputes"] = [d.to_dict() for d in self.disputes]
+        if self.privacy_summary is not None:
+            out["privacy_summary"] = self.privacy_summary.to_dict()
         return out
 
     def get(self, claim_type: str) -> Optional[ClaimDecision]:
@@ -384,6 +392,7 @@ def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
     claims = tuple(claim_decision_from_dict(c) for c in data.get("claims", []))
     if "synthetic" not in data:
         raise ValueError("claim response missing required field: synthetic")
+    raw_privacy = data.get("privacy_summary")
     return ClaimResponse(
         request_id=str(data["request_id"]),
         source_node=str(data["source_node"]),
@@ -396,6 +405,11 @@ def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
         disputes=tuple(
             claim_dispute_from_dict(d, raised_by=str(data["source_node"]))
             for d in data.get("disputes", [])
+        ),
+        privacy_summary=(
+            privacy_summary_from_dict(raw_privacy)
+            if isinstance(raw_privacy, Mapping)
+            else None
         ),
     )
 

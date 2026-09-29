@@ -1,0 +1,144 @@
+{
+  "run_id": "g3-stayed-traveled",
+  "provider_id": "SYNTH-NPI-1999999999",
+  "display_name": "Synthetic Provider P (happy path)",
+  "synthetic": true,
+  "nodes": [
+    {
+      "node_name": "HospitalCred",
+      "ok": true,
+      "stayed_field_count": 40,
+      "stayed_preview": [
+        "legal_name",
+        "preferred_name",
+        "specialty_primary",
+        "specialty_secondary",
+        "npi_local",
+        "dea_number_internal",
+        "education.medical_school",
+        "education.graduation_year",
+        "education.residency_program",
+        "education.residency_years",
+        "education.fellowship",
+        "work_history[0].employer",
+        "work_history[0].title",
+        "work_history[0].start",
+        "work_history[0].end",
+        "work_history[0].fte",
+        "work_history[1].employer",
+        "work_history[1].title",
+        "work_history[1].start",
+        "work_history[1].end",
+        "work_history[1].fte",
+        "addresses.practice.line1",
+        "addresses.practice.city",
+        "addresses.practice.state",
+        "addresses.practice.zip",
+        "addresses.mailing.line1",
+        "addresses.mailing.city",
+        "addresses.mailing.state",
+        "addresses.mailing.zip",
+        "privileges.active_status",
+        "privileges.departments[0]",
+        "privileges.departments[1]",
+        "privileges.admit_rights",
+        "privileges.or_privileges",
+        "board.specialty_board",
+        "board.certification_status",
+        "board.expiration_year",
+        "internal_notes",
+        "hr_flags.background_check_internal",
+        "hr_flags.peer_review_open"
+      ],
+      "traveled_claims": [
+        {
+          "claim_type": "board_status",
+          "value": "clear",
+          "confidence": 0.95,
+          "evidence_ref": "fixture://hospital/board#P",
+          "notes": "No board flags in synthetic set"
+        },
+        {
+          "claim_type": "work_history_complete",
+          "value": true,
+          "confidence": 0.98,
+          "evidence_ref": "fixture://hospital/work_history#P",
+          "notes": "Synth work-history shard complete"
+        }
+      ],
+      "traveled_claim_count": 2,
+      "count_line": "40 fields stayed, 2 typed claims traveled",
+      "error": null
+    },
+    {
+      "node_name": "PayerEnrollment",
+      "ok": true,
+      "stayed_field_count": 29,
+      "stayed_preview": [
+        "legal_name",
+        "tax_id_internal",
+        "npi",
+        "license.state",
+        "license.number",
+        "license.status",
+        "license.issued",
+        "license.expires",
+        "enrollment.network_id",
+        "enrollment.product_lines[0]",
+        "enrollment.product_lines[1]",
+        "enrollment.effective_date",
+        "enrollment.recredential_due",
+        "enrollment.status_internal",
+        "banking.payee_name",
+        "banking.account_last4",
+        "banking.routing_last4",
+        "exclusion_screen.oig_like_clear",
+        "exclusion_screen.sam_like_clear",
+        "exclusion_screen.last_screened",
+        "practice_locations[0].name",
+        "practice_locations[0].npi_loc",
+        "practice_locations[0].tin_loc",
+        "practice_locations[1].name",
+        "practice_locations[1].npi_loc",
+        "practice_locations[1].tin_loc",
+        "internal_notes",
+        "claims_history_summary.ytd_claims",
+        "claims_history_summary.denial_rate_internal"
+      ],
+      "traveled_claims": [
+        {
+          "claim_type": "enrollment_status",
+          "value": "enrolled",
+          "confidence": 0.9,
+          "evidence_ref": "fixture://payer/enrollment#P",
+          "notes": "Synth enrolled in network X"
+        },
+        {
+          "claim_type": "exclusion_clear",
+          "value": true,
+          "confidence": 0.97,
+          "evidence_ref": "fixture://payer/exclusion#P",
+          "notes": "Synth OIG-like exclusion clear"
+        },
+        {
+          "claim_type": "license_active",
+          "value": true,
+          "confidence": 0.99,
+          "evidence_ref": "fixture://payer/license#P",
+          "notes": "Synth state license active"
+        },
+        {
+          "claim_type": "npi_enumerated",
+          "value": true,
+          "confidence": 1.0,
+          "evidence_ref": "fixture://payer/npi#P",
+          "notes": "Fake NPI enumerated in synth registry"
+        }
+      ],
+      "traveled_claim_count": 4,
+      "count_line": "29 fields stayed, 4 typed claims traveled",
+      "error": null
+    }
+  ],
+  "disclaimer": "Synthetic fixtures only \u2014 no live CAQH/NPDB. Field paths stayed local; typed claims traveled. Not a HITRUST or HIPAA-certified product claim."
+}

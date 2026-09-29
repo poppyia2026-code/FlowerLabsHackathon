@@ -63,21 +63,41 @@
         "resolves_dispute": {
           "type": "boolean"
         },
-        "worded_by": { "type": "string" }
+        "worded_by": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "claim_dispute": {
       "type": "object",
-      "required": ["claim_type", "observed"],
+      "required": [
+        "claim_type",
+        "observed"
+      ],
       "properties": {
-        "claim_type": { "$ref": "#/definitions/claim_type" },
+        "claim_type": {
+          "$ref": "#/definitions/claim_type"
+        },
         "observed": {},
-        "raised_by": { "type": "string" },
-        "period": { "type": "string" },
-        "reason": { "type": "string" },
-        "evidence_ref": { "type": ["string", "null"] },
-        "worded_by": { "type": "string" }
+        "raised_by": {
+          "type": "string"
+        },
+        "period": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "worded_by": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
@@ -117,7 +137,9 @@
         "synthetic": {
           "const": true
         },
-        "recheck": { "$ref": "#/definitions/claim_dispute" }
+        "recheck": {
+          "$ref": "#/definitions/claim_dispute"
+        }
       },
       "additionalProperties": false
     },
@@ -168,7 +190,12 @@
         },
         "disputes": {
           "type": "array",
-          "items": { "$ref": "#/definitions/claim_dispute" }
+          "items": {
+            "$ref": "#/definitions/claim_dispute"
+          }
+        },
+        "privacy_summary": {
+          "$ref": "#/definitions/privacy_summary"
         }
       },
       "additionalProperties": false
@@ -248,6 +275,33 @@
         },
         "synthetic": {
           "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "privacy_summary": {
+      "type": "object",
+      "description": "F13 stayed-vs-traveled metadata. Counts + field paths only \u2014 no raw dossier.",
+      "required": [
+        "stayed_field_count",
+        "stayed_preview",
+        "traveled_claim_count"
+      ],
+      "properties": {
+        "stayed_field_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stayed_preview": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Leaf field paths that remained local (synthetic names only)."
+        },
+        "traveled_claim_count": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "additionalProperties": false

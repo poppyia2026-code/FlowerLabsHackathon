@@ -51,6 +51,7 @@ fixture-mode = "true"
 hitl-auto-approve-dry-run = "false"  # Flower Chat requires an explicit review command
 grid-handoff = "true"  # F0: agent.grid sample/message between ≥2 roles
 grid-pull-timeout = "120"  # SuperNode cold start; Grid allows up to 300
+grid-wait-budget = "240"  # all Grid waits in one run; SuperGrid stops a task at 300
 review-max-age-seconds = 600
 endeavor-optional = "true"  # F11 bonus — dry-run without FLWR_RUNTIME_* / ENDEAVOR_API_KEY
 endeavor-role = "PoppyOrchestrator"

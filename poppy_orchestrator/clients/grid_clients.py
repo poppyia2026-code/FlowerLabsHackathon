@@ -10,7 +10,8 @@ agent.grid, and missing replies never fall back to local fixtures.
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+import time
+from typing import Any, Callable, Optional, Union
 
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 from poppy_orchestrator.contracts.claims import (
@@ -20,6 +21,26 @@ from poppy_orchestrator.contracts.claims import (
 )
 from poppy_orchestrator.grid.fake_grid import FakeAgentGrid
 from poppy_orchestrator.grid.roles import ROLE_HOSPITAL_CRED, ROLE_PAYER_ENROLLMENT
+
+
+class PullBudget:
+    """One time allowance shared by every Grid wait in a run.
+
+    SuperGrid stops a task five minutes after it starts. Each wait gets the
+    per-message limit or whatever is left of the total, whichever is smaller,
+    so a run with a follow-up round cannot wait its way past that limit.
+    """
+
+    def __init__(self, *, per_message: float, total: float) -> None:
+        self._per_message = per_message
+        self._deadline = time.monotonic() + total
+
+    def __call__(self) -> float:
+        remaining = self._deadline - time.monotonic()
+        return max(0.0, min(self._per_message, remaining))
+
+
+PullTimeout = Union[float, Callable[[], float]]
 
 
 def _find_node(grid: Any, role: str) -> Optional[dict[str, Any]]:
@@ -47,7 +68,7 @@ def fetch_claim_response_via_grid(
     role: str,
     request: ClaimRequest,
     *,
-    pull_timeout: float = 30.0,
+    pull_timeout: PullTimeout = 30.0,
 ) -> ClaimResponse:
     """Push ClaimRequest-shaped payload to role node; pull ClaimResponse."""
     try:
@@ -65,7 +86,7 @@ def fetch_claim_response_via_grid(
 
 
 def _fetch_claim_response(
-    grid: Any, role: str, request: ClaimRequest, *, pull_timeout: float
+    grid: Any, role: str, request: ClaimRequest, *, pull_timeout: PullTimeout
 ) -> ClaimResponse:
     node = _find_node(grid, role)
     if node is None:
@@ -124,7 +145,10 @@ def _fetch_claim_response(
         {
             "name": "pull_messages",
             "call_id": f"claim-pull-{role}",
-            "arguments": {"message_ids": [mid], "timeout": pull_timeout},
+            "arguments": {
+                "message_ids": [mid],
+                "timeout": pull_timeout() if callable(pull_timeout) else pull_timeout,
+            },
         }
     )
     pull_out = json.loads(pull["output"]) if isinstance(pull["output"], str) else pull["output"]
@@ -171,7 +195,9 @@ class GridHospitalCredClient(SuperNodeClaimClient):
 
     node_name = ROLE_HOSPITAL_CRED
 
-    def __init__(self, grid: Any = None, *, pull_timeout: float = 30.0) -> None:
+    def __init__(
+        self, grid: Any = None, *, pull_timeout: PullTimeout = 30.0
+    ) -> None:
         self._grid = grid if grid is not None else FakeAgentGrid()
         self._pull_timeout = pull_timeout
 
@@ -189,7 +215,9 @@ class GridPayerEnrollmentClient(SuperNodeClaimClient):
 
     node_name = ROLE_PAYER_ENROLLMENT
 
-    def __init__(self, grid: Any = None, *, pull_timeout: float = 30.0) -> None:
+    def __init__(
+        self, grid: Any = None, *, pull_timeout: PullTimeout = 30.0
+    ) -> None:
         self._grid = grid if grid is not None else FakeAgentGrid()
         self._pull_timeout = pull_timeout
 

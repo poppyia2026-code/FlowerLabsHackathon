@@ -11,7 +11,9 @@ import re
 import time
 from typing import Any
 
-from poppy_orchestrator.clients.grid_clients import GridHospitalCredClient, GridPayerEnrollmentClient
+from poppy_orchestrator.clients.grid_clients import (
+    GridHospitalCredClient, GridPayerEnrollmentClient, PullBudget,
+)
 from poppy_orchestrator.contracts.claims import (
     ClaimBundle, ClaimConflict, HitlAction, HitlDecision, ProviderRef,
     claim_conflict_from_dict, claim_response_from_dict,
@@ -154,7 +156,10 @@ def run_live_agent(agent: Any, context: Any) -> None:
     networks = re.findall(r"SYNTH-NETWORK-[A-Za-z0-9-]+", prompt)
     provider_id = provider_ids[0] if provider_ids else str(config.get("provider-id", "SYNTH-NPI-1999999999"))
     network_id = networks[0] if networks else str(config.get("network-id", "SYNTH-NETWORK-X"))
-    timeout = float(config.get("grid-pull-timeout", 30))
+    timeout = PullBudget(
+        per_message=float(config.get("grid-pull-timeout", 30)),
+        total=float(config.get("grid-wait-budget", 240)),
+    )
     try:
         run_credentialing_flow(
             hospital=GridHospitalCredClient(grid, pull_timeout=timeout),

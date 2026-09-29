@@ -1,5 +1,11 @@
 # F2 / F3 — SuperNode HospitalCred + PayerEnrollment scaffolds
 
+**Runtime update:** use [F4 live runtime](f4-live-runtime.md) for deployment.
+The same FAB now dispatches at each SuperNode using local `poppy-role` and
+`poppy-data` configuration, reads Flower's instruction envelope, and returns
+the requested provider's claims. The separate-FAB suggestion and coordinator
+TODO below describe the original scaffold and are superseded by that guide.
+
 **Status:** code scaffold complete (fixtures + AgentApp stubs + FakeAgentGrid
 wire). **Live SuperGrid registration is Leandro / FLOWER-10** — do not claim
 live federation until `flwr login` + register succeeds.

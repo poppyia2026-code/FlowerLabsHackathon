@@ -9,3 +9,11 @@ dist/
 *.fab
 .DS_Store
 dry_run_out.json
+.env
+.env.*
+!.env.example
+keys/
+.flwr/
+.flwr-local/
+runtime-data/
+runtime-logs/

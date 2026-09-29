@@ -30,6 +30,7 @@ def _run(env_extra: dict | None = None, args: list[str] | None = None) -> subpro
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
 
@@ -67,7 +68,7 @@ class TestF9E2E:
         out = tmp_path / "f9.json"
         proc = _run(args=["--hitl", "approve", "--budget-check", "--json-out", str(out)])
         assert proc.returncode == 0, proc.stdout + proc.stderr
-        data = json.loads(out.read_text())
+        data = json.loads(out.read_text(encoding="utf-8"))
         assert data["f9_e2e"] is True
         assert data["live_supergrid"] is False
         assert data["production_auto_approve"] is False
@@ -83,6 +84,6 @@ class TestF9E2E:
         out = tmp_path / "f9-esc.json"
         proc = _run(args=["--hitl", "escalate", "--json-out", str(out)])
         assert proc.returncode == 0, proc.stdout + proc.stderr
-        data = json.loads(out.read_text())
+        data = json.loads(out.read_text(encoding="utf-8"))
         assert data["receipt_emitted"] is False
         assert data["hitl"]["action"] == "escalate"

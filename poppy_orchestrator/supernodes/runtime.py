@@ -20,7 +20,7 @@ def serve_runtime_instruction(agent: Any, context: Any, role: str | None = None)
     data_path = node_config.get("poppy-data")
     if not isinstance(data_path, str) or not Path(data_path).is_file():
         raise ValueError("Configure poppy-data with this node's local synthetic shard")
-    catalog = json.loads(Path(data_path).read_text())
+    catalog = json.loads(Path(data_path).read_text(encoding="utf-8"))
     if catalog.get("meta", {}).get("synthetic") is not True:
         raise ValueError("This demo only accepts explicitly synthetic local data")
 

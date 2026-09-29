@@ -51,7 +51,7 @@ class StubPayerEnrollmentClient(SuperNodeClaimClient):
         self._providers = self._load()
 
     def _load(self) -> dict[str, Any]:
-        with self._fixtures_path.open() as f:
+        with self._fixtures_path.open(encoding="utf-8") as f:
             data = json.load(f)
         return {p["provider_id"]: p for p in data["providers"]}
 

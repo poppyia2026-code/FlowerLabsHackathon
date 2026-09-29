@@ -40,7 +40,7 @@ ESCALATE_PROVIDER_ID = "SYNTH-NPI-1888888888"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError(f"fixture root must be object: {path}")

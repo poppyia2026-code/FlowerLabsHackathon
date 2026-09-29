@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "privcred-orchestrator"
-version = "0.1.0"
+version = "0.2.0"
 description = "PoppyOrchestrator AgentApp — federated provider credentialing claims on Flower SuperGrid (synthetic MVP)"
 readme = "README.md"
 license = { file = "LICENSE" }

@@ -84,6 +84,17 @@ uv run python scripts/run_supernode.py PayerEnrollment \
   --key keys/payer-enrollment --port 8012
 ```
 
+### Docker alternative (no local Flower install)
+
+`compose.yaml` starts both nodes from the official `flwr/supernode:1.39.0`
+image with the same `poppy-role` / `poppy-data` node config. Each container
+mounts only its own private key and its own shard, read-only. It uses the keys
+created above, `keys/hospital-cred` and `keys/payer-enrollment`:
+
+```sh
+docker compose up
+```
+
 Both names must be unique and exactly match `HospitalCred` and `PayerEnrollment`.
 Check `uv run flwr supernode list supergrid` and the federation membership before
 launching the app. A successful registration alone does not prove the node is online.

@@ -66,23 +66,31 @@ in that process, node wording included.
 
 ## Start the nodes
 
-With Docker, from the repository root:
+With Docker, start from the `compose.yaml` added in #21 and give each service
+its own model and provider. For the node that runs on Nebius:
 
-```shell
-export NEBIUS_API_KEY=...        # from the hackathon Slack
-export FLOWER_API_KEY=...        # flower.ai, Profile, Settings, API Keys
-export HOSPITAL_MODEL=dedicated/flowerai/MiniMax-M3-OOLI9o
-export PAYER_MODEL=openai/gpt-5.6-sol
-docker compose up
+```yaml
+    command:
+      # existing arguments stay; add poppy-model to the node config
+      - --node-config=poppy-role="HospitalCred" poppy-data="/data/HospitalCred/providers.json" poppy-model="dedicated/flowerai/MiniMax-M3-OOLI9o"
+    environment:
+      FLWR_MODEL_API_ENDPOINT: https://api.tokenfactory.tf-ca1.nebius.com/v1/responses
+      FLWR_MODEL_API_KEY: ${NEBIUS_API_KEY:?Set NEBIUS_API_KEY (shared in the hackathon Slack)}
 ```
 
-Without Docker:
+For a node on Flower AI, add `poppy-model` with a Flower AI model id and keep
+`FLWR_MODEL_API_KEY` as the Flower key, with no endpoint. Never commit keys.
+
+Without Docker, with the provider variables set in that shell:
 
 ```shell
 python scripts/run_supernode.py HospitalCred \
   --data fixtures/supernodes/HospitalCred/providers.json \
-  --key keys/supernode-hospital --model "$HOSPITAL_MODEL"
+  --key keys/hospital-cred --port 8011 \
+  --model dedicated/flowerai/MiniMax-M3-OOLI9o
 ```
+
+Key names follow `docs/f4-live-runtime.md`.
 
 ## Verification
 
@@ -100,5 +108,5 @@ Not verified:
 
 - A call to Nebius Token Factory or to Flower AI. No keys were available.
 - What a real model returns. A rewrite that fails the checks above is dropped.
-- `compose.yaml`. No Docker on the machine that wrote it.
+- The Docker settings above. No Docker on the machine that wrote them.
 - Any run on SuperGrid.

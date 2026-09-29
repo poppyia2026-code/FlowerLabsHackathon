@@ -11,7 +11,7 @@ Status · 2026-09-29 ~12:22 PT
 - PR #7 F7 (FLOWER-3) Done — HITL Approve/Escalate/Reject panel (`docs/f7-hitl.md`)
 - PR #8 F2/F3 scaffolds + G1 + G3 (FLOWER-9/12/16/19) **Merged**
 - PR #9 F11 Endeavor + F9 E2E + H1/H2 (FLOWER-7/14/17/18) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/9
-- PR #10 H3/H5 + H4 backlog notes (FLOWER-24/21/22/25/27/26/28/29) — pending merge
+- PR #10 H3/H5 + H4 backlog notes (FLOWER-24/21/22/25/27/26/28/29) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/10
 
 ## Pointer
 **Human-gated remaining:** FLOWER-5 Hub+Typeform → FLOWER-10 live ≥2 SuperNodes (Leandro) → FLOWER-20 G2 dress rehearsal (Leandro+Franco).  

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "redirects": [
+    {
+      "source": "/hub",
+      "destination": "https://flower.ai/apps/poppyai/privcred-orchestrator",
+      "permanent": false
+    }
+  ]
+}

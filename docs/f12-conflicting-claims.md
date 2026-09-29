@@ -39,6 +39,13 @@ A person then decides with both answers in front of them.
 Round 2 sends the hospital only what the payer objected to, never the
 payer's records.
 
+## Time
+
+The conflict path sends three messages instead of two. Every wait in a run
+draws from one allowance (`grid-wait-budget`, 240s), so the run gives up and
+fails closed before SuperGrid's five-minute task limit instead of being cut
+off by it. A single wait is still capped by `grid-pull-timeout` (120s).
+
 ## Demo script
 
 In Flower Chat:
@@ -68,5 +75,18 @@ fails closed.
 
 ## Verification
 
-- `pytest`: `tests/test_conflicting_claims.py`, `tests/test_conflict_contract.py`
-- Not run against real Flower processes or SuperGrid.
+- `pytest`: `tests/test_conflicting_claims.py`, `tests/test_conflict_contract.py`,
+  `tests/test_pull_budget.py`
+- `python scripts/smoke_local_flower.py`: passed on 2026-09-29 with a real
+  local TLS SuperLink and two authenticated SuperNodes (Flower 1.39.0,
+  Windows 11). Decisions in that script are automated, not typed by a person.
+
+Measured in that run, one laptop, nodes already online:
+
+| Run | Grid tool calls | Time |
+| --- | --- | --- |
+| Collect claims, sources agree | 6 | about 19 to 20 s |
+| Collect claims, sources disagree | 9 | about 28 to 30 s |
+| Apply a decision | 0 | about 6 to 7 s |
+
+- Not run on SuperGrid. Times there will differ.

@@ -86,6 +86,6 @@ def write_receipt_artifacts(
     directory.mkdir(parents=True, exist_ok=True)
     json_path = directory / f"{stem}.json"
     text_path = directory / f"{stem}.txt"
-    json_path.write_text(format_receipt_json(receipt))
-    text_path.write_text(format_receipt_text(receipt))
+    json_path.write_text(format_receipt_json(receipt), encoding="utf-8")
+    text_path.write_text(format_receipt_text(receipt), encoding="utf-8")
     return {"json": json_path, "txt": text_path}

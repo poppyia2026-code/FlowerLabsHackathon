@@ -166,10 +166,10 @@ def test_receipt_validates_against_claim_contract_schema():
 def test_example_failsoft_artifacts_exist_and_parse():
     assert EXAMPLE_JSON.is_file(), "fixtures/receipts/example_approve.json missing"
     assert EXAMPLE_TXT.is_file(), "fixtures/receipts/example_approve.txt missing"
-    data = json.loads(EXAMPLE_JSON.read_text())
+    data = json.loads(EXAMPLE_JSON.read_text(encoding="utf-8"))
     assert data["synthetic"] is True
     assert data["hitl"]["action"] == "approve"
-    assert "AUDITABLE CLAIM RECEIPT" in EXAMPLE_TXT.read_text()
+    assert "AUDITABLE CLAIM RECEIPT" in EXAMPLE_TXT.read_text(encoding="utf-8")
 
 
 def test_emit_hook_null_on_reject_with_null_emitter():

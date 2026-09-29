@@ -21,4 +21,7 @@ if str(ROOT) not in sys.path:
 from poppy_orchestrator.__main__ import main
 
 if __name__ == "__main__":
+    from poppy_orchestrator.console import use_utf8_output
+
+    use_utf8_output()
     raise SystemExit(main())

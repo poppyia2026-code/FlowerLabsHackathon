@@ -61,4 +61,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    from poppy_orchestrator.console import use_utf8_output
+
+    use_utf8_output()
     raise SystemExit(main())

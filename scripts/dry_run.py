@@ -92,7 +92,7 @@ def _validate_schema_samples() -> None:
             "(pip install jsonschema). Re-run without --self-test for basic dry-run."
         ) from exc
 
-    with SCHEMA_PATH.open() as f:
+    with SCHEMA_PATH.open(encoding="utf-8") as f:
         schema = json.load(f)
 
     def validate(instance: dict, definition: str) -> None:
@@ -228,4 +228,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from poppy_orchestrator.console import use_utf8_output
+
+    use_utf8_output()
     raise SystemExit(main())

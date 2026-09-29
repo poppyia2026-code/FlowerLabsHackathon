@@ -21,7 +21,7 @@ def main() -> None:
     args = parser.parse_args()
     data = args.data.resolve(strict=True)
     key = args.key.resolve(strict=True)
-    catalog = json.loads(data.read_text())
+    catalog = json.loads(data.read_text(encoding="utf-8"))
     if catalog.get('meta', {}).get('synthetic') is not True:
         parser.error('Use synthetic data only for this demo')
     executable = shutil.which('flower-supernode')

@@ -173,7 +173,9 @@ def run_live_agent(agent: Any, context: Any) -> None:
             emitter=flower_emitter_from_session(agent),
             config=OrchestratorConfig(provider_id=provider_id, network_id=network_id,
                                       display_name="Synthetic provider",
-                                      run_id=f"run-{context.run_id}"),
+                                      run_id=f"run-{context.run_id}",
+                                      model_id=str(config.get("endeavor-model-id") or "")
+                                      or None),
         )
     except ReviewRequired as review:
         _save(context, {"status": "pending", "bundle": review.bundle.to_dict()})

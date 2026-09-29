@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 import json
+import os
 import uuid
 
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
@@ -40,6 +41,11 @@ from poppy_orchestrator.events.emit import (
 )
 from poppy_orchestrator.hitl.pause import HitlGate
 from poppy_orchestrator.receipts.emit import emit_receipt_after_approve
+from poppy_orchestrator.endeavor.config import (
+    ENDEAVOR_MODEL_ID,
+    EndeavorConfig,
+    resolve_endeavor_config,
+)
 from poppy_orchestrator.endeavor.summarize import (
     endeavor_stage_payload,
     summarize_claims_for_hitl,
@@ -89,6 +95,17 @@ class OrchestratorConfig:
     network_id: str = "SYNTH-NETWORK-X"
     display_name: str = ""
     run_id: Optional[str] = None
+    model_id: Optional[str] = None  # `endeavor-model-id` of this run, if set
+
+    def model_config(self) -> Optional[EndeavorConfig]:
+        """The run's own model id wins over the environment and the default.
+
+        On SuperGrid the Orchestrator's environment is not ours to set, so the
+        run config is the only place the model can be chosen.
+        """
+        if not self.model_id:
+            return None
+        return resolve_endeavor_config({**os.environ, ENDEAVOR_MODEL_ID: self.model_id})
 
     def resolved_display_name(self) -> str:
         if self.display_name.strip():
@@ -231,7 +248,7 @@ def run_credentialing_flow(
     emit_stage(emitter, "claims_aggregated", bundle.to_dict())
 
     # --- F11 Endeavor assist on Orchestrator (optional; dry-run without key) ---
-    endeavor = summarize_claims_for_hitl(bundle)
+    endeavor = summarize_claims_for_hitl(bundle, config=config.model_config())
     emit_stage(emitter, "endeavor_assist", endeavor_stage_payload(endeavor))
     mode_tag = "LIVE" if endeavor.live_call else "DRY-RUN (endeavor_optional)"
     emit_text(

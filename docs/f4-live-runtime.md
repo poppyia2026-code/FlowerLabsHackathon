@@ -88,11 +88,10 @@ uv run python scripts/run_supernode.py PayerEnrollment \
 
 `compose.yaml` starts both nodes from the official `flwr/supernode:1.39.0`
 image with the same `poppy-role` / `poppy-data` node config. Each container
-mounts only its own shard, read-only. It expects `keys/supernode-0`
-(HospitalCred) and `keys/supernode-1` (PayerEnrollment):
+mounts only its own private key and its own shard, read-only. It uses the keys
+created above, `keys/hospital-cred` and `keys/payer-enrollment`:
 
 ```sh
-export FLWR_MODEL_API_KEY="..."   # flower.ai -> Profile -> Settings -> API Keys
 docker compose up
 ```
 

@@ -2,39 +2,38 @@
 # no local Flower install needed. Docker equivalent of scripts/run_supernode.py.
 # Based on https://github.com/jafermarq/flower-collaborative-agent-hackathon
 #
-#   keys/supernode-0 -> HospitalCred, keys/supernode-1 -> PayerEnrollment
-#   (register the .pub files and add both node IDs to the deployment federation,
-#    see docs/f4-live-runtime.md)
+#   Keys follow docs/f4-live-runtime.md: keys/hospital-cred, keys/payer-enrollment
+#   (register the .pub files and add both node IDs to the deployment federation).
 #
-#   export FLWR_MODEL_API_KEY="..."   # flower.ai -> Profile -> Settings -> API Keys
 #   docker compose up
 #
-# Each container mounts only its own synthetic shard (read-only).
+# Each container mounts only its own private key and its own synthetic shard,
+# read-only; the bind mounts are the isolation boundary. The app's only
+# dependency (flwr 1.39) ships in the image, so no runtime installation.
+# On a Linux host, check the image user (uid 49999) can read the 600 key files.
 services:
   hospital-cred:
     image: flwr/supernode:1.39.0
+    restart: unless-stopped
     command:
       - --superlink=fleet-supergrid.flower.ai:443
-      - --auth-supernode-private-key=/keys/supernode-0
+      - --auth-supernode-private-key=/keys/hospital-cred
       - --node-config=poppy-role="HospitalCred" poppy-data="/data/HospitalCred/providers.json"
-      - --allow-runtime-dependency-installation
     environment:
-      FLWR_MODEL_API_KEY: ${FLWR_MODEL_API_KEY:?Set FLWR_MODEL_API_KEY before running docker compose}
-      FLWR_FILESYSTEM_ALLOWED_DIRS: /data/HospitalCred
+      FLWR_MODEL_API_KEY: ${FLWR_MODEL_API_KEY:-}
     volumes:
-      - ./keys:/keys:ro
+      - ./keys/hospital-cred:/keys/hospital-cred:ro
       - ./fixtures/supernodes/HospitalCred:/data/HospitalCred:ro
 
   payer-enrollment:
     image: flwr/supernode:1.39.0
+    restart: unless-stopped
     command:
       - --superlink=fleet-supergrid.flower.ai:443
-      - --auth-supernode-private-key=/keys/supernode-1
+      - --auth-supernode-private-key=/keys/payer-enrollment
       - --node-config=poppy-role="PayerEnrollment" poppy-data="/data/PayerEnrollment/providers.json"
-      - --allow-runtime-dependency-installation
     environment:
-      FLWR_MODEL_API_KEY: ${FLWR_MODEL_API_KEY:?Set FLWR_MODEL_API_KEY before running docker compose}
-      FLWR_FILESYSTEM_ALLOWED_DIRS: /data/PayerEnrollment
+      FLWR_MODEL_API_KEY: ${FLWR_MODEL_API_KEY:-}
     volumes:
-      - ./keys:/keys:ro
+      - ./keys/payer-enrollment:/keys/payer-enrollment:ro
       - ./fixtures/supernodes/PayerEnrollment:/data/PayerEnrollment:ro

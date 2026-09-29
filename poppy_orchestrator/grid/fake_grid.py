@@ -1,8 +1,11 @@
 """Local FakeAgentGrid — mirrors Flower RuntimeAgentGrid tool surface.
 
 Used for dry-run / unit tests when SuperGrid is unavailable.
-Tool names match flwr.supercore.task_process.agent.grid:
+Tool names match flwr AgentGrid:
   get_nodes · push_messages · pull_messages · push_reply_message
+
+Auto-replies return synthetic claim JSON via stub clients / fixtures
+(F5/F6 contract) — never live CAQH/NPDB/PHI.
 """
 
 from __future__ import annotations
@@ -13,10 +16,23 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from poppy_orchestrator.clients.hospital_cred import StubHospitalCredClient
+from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClient
+from poppy_orchestrator.contracts.claims import (
+    HOSPITAL_CRED_CLAIMS,
+    PAYER_ENROLLMENT_CLAIMS,
+    ClaimRequest,
+    ProviderRef,
+    new_request_id,
+)
 from poppy_orchestrator.grid.roles import (
     ROLE_HOSPITAL_CRED,
     ROLE_PAYER_ENROLLMENT,
 )
+
+# Stable fake uint64 decimal strings (judge-visible node ids).
+HOSPITAL_CRED_NODE_ID = "9000000000000001001"
+PAYER_ENROLLMENT_NODE_ID = "9000000000000001002"
 
 
 @dataclass(frozen=True)
@@ -28,9 +44,55 @@ class FakeGridNode:
 
 def _default_nodes() -> list[FakeGridNode]:
     return [
-        FakeGridNode("1001", ROLE_HOSPITAL_CRED, "synth://hospital-cred"),
-        FakeGridNode("1002", ROLE_PAYER_ENROLLMENT, "synth://payer-enrollment"),
+        FakeGridNode(
+            HOSPITAL_CRED_NODE_ID, ROLE_HOSPITAL_CRED, "synth://hospital-cred"
+        ),
+        FakeGridNode(
+            PAYER_ENROLLMENT_NODE_ID,
+            ROLE_PAYER_ENROLLMENT,
+            "synth://payer-enrollment",
+        ),
     ]
+
+
+def _synthetic_claim_reply(role: str, inbound_payload: str) -> str:
+    """Build synthetic ClaimResponse JSON for a role stub (fixtures only)."""
+    provider_id = "SYNTH-NPI-1999999999"
+    network_id = "SYNTH-NETWORK-X"
+    try:
+        parsed = json.loads(inbound_payload)
+        provider_id = str(parsed.get("provider_id") or provider_id)
+        network_id = str(parsed.get("network_id") or network_id)
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+
+    provider = ProviderRef(provider_id=provider_id, network_id=network_id)
+    if role == ROLE_HOSPITAL_CRED:
+        req = ClaimRequest(
+            request_id=new_request_id("hosp"),
+            provider=provider,
+            claim_types=tuple(sorted(HOSPITAL_CRED_CLAIMS)),
+            source_node=ROLE_HOSPITAL_CRED,
+        )
+        resp = StubHospitalCredClient().request_claims(req)
+    elif role == ROLE_PAYER_ENROLLMENT:
+        req = ClaimRequest(
+            request_id=new_request_id("pay"),
+            provider=provider,
+            claim_types=tuple(sorted(PAYER_ENROLLMENT_CLAIMS)),
+            source_node=ROLE_PAYER_ENROLLMENT,
+        )
+        resp = StubPayerEnrollmentClient().request_claims(req)
+    else:
+        return json.dumps(
+            {
+                "ok": False,
+                "error": f"unknown synthetic role: {role}",
+                "synthetic": True,
+            },
+            separators=(",", ":"),
+        )
+    return json.dumps(resp.to_dict(), separators=(",", ":"))
 
 
 @dataclass
@@ -104,7 +166,6 @@ class FakeAgentGrid:
                 "reply_to_message_id": item.get("reply_to_message_id"),
             }
             if self._auto_reply:
-                # Synthesize role reply immediately (judge-visible handoff).
                 node = next((n for n in self.nodes if n.node_id == dst), None)
                 role = node.name if node else f"node-{dst}"
                 reply_id = f"msg-{uuid.uuid4().hex[:12]}"
@@ -112,10 +173,7 @@ class FakeAgentGrid:
                     "message_id": reply_id,
                     "reply_to_message_id": mid,
                     "src_node_id": dst,
-                    "payload": (
-                        f"[{role}] ACK synthetic claim handoff — "
-                        f"payload_len={len(payload)} (fixtures only, no PHI)."
-                    ),
+                    "payload": _synthetic_claim_reply(role, payload),
                     "error": None,
                 }
             results.append({"message_id": mid, "error": None})
@@ -136,5 +194,6 @@ class FakeAgentGrid:
         return {"messages": messages, "pending_message_ids": pending}
 
     def _push_reply_message(self, payload: str) -> dict[str, Any]:
+        _ = payload
         mid = f"msg-{uuid.uuid4().hex[:12]}"
         return {"message_id": mid, "error": None}

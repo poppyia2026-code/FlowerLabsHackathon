@@ -86,3 +86,24 @@ python -m pytest tests/test_f8_claim_receipt.py -v
 
 Auditable run-series receipt emits **only** after HITL Approve. See `docs/f8-claim-receipt.md`.
 
+
+## F2 / F3 SuperNode scaffolds (HospitalCred + PayerEnrollment)
+
+Fixture-backed AgentApp stubs Leandro can register on SuperGrid (live path = FLOWER-10).
+
+```bash
+python scripts/run_f2_f3_stubs.py
+python -m poppy_orchestrator.supernodes.hospital_cred_app
+python -m poppy_orchestrator.supernodes.payer_enrollment_app
+python -m pytest tests/test_f2_f3_supernode_stubs.py -v
+```
+
+Docs: `docs/f2-f3-supernodes.md` · shards: `fixtures/supernodes/{HospitalCred,PayerEnrollment}/`
+
+## G1 demo runbook + G3 fail-soft
+
+- `docs/g1-demo-runbook.md` — 3–5 min score beats (Flower → problem → HITL → receipt → Hub)
+- `docs/g3-failsoft.md` — offline kit when Grid flakes
+```bash
+python scripts/run_g3_failsoft.py --write
+```

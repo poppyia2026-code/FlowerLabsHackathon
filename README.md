@@ -63,3 +63,12 @@ python -m pytest tests/test_f1_claim_fixtures.py -v
 
 SuperNode layout for Leandro: `docs/f1-fixtures.md` → `fixtures/supernodes/{HospitalCred,PayerEnrollment}/`.
 
+## F8 claim receipt (after Approve)
+
+```bash
+python scripts/print_receipt.py
+python -m pytest tests/test_f8_claim_receipt.py -v
+```
+
+Auditable run-series receipt emits **only** after HITL Approve. See `docs/f8-claim-receipt.md`.
+

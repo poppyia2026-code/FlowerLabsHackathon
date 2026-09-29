@@ -107,3 +107,29 @@ Docs: `docs/f2-f3-supernodes.md` · shards: `fixtures/supernodes/{HospitalCred,P
 ```bash
 python scripts/run_g3_failsoft.py --write
 ```
+
+## F11 Endeavor (optional bonus)
+
+Endeavor on PoppyOrchestrator claim-assist. Dry-run without API key (`endeavor_optional=true`).
+
+```bash
+python -m pytest tests/test_f11_endeavor.py -v
+ENDEAVOR_ENABLED=0 python scripts/run_f9_e2e.py --hitl approve
+```
+
+Docs: `docs/f11-endeavor.md`
+
+## F9 E2E dry run (demo budget)
+
+```bash
+python scripts/run_f9_e2e.py --hitl approve --budget-check
+PRIVCRED_E2E_TEST=1 TEST_HITL_DECISION=approve python scripts/run_f9_e2e.py
+python -m pytest tests/test_f9_e2e_dry_run.py -v
+```
+
+Local stubs only — live SuperGrid dress = G2 (Leandro + Franco). Docs: `docs/f9-e2e-dry-run.md`
+
+## Pitch copy (H1 / H2)
+
+- `docs/h1-competitive-tear-sheet.md` — payer ICP tear-sheet (Symplr cite; no banned claims)
+- `docs/h2-why-not-symplr-beat.md` — ≤45s spoken beat

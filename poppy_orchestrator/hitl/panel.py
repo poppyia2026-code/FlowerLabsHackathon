@@ -13,6 +13,12 @@ import json
 import time
 
 from poppy_orchestrator.contracts.claims import ClaimBundle, HitlAction, HitlDecision
+from poppy_orchestrator.hitl.stayed_traveled import (
+    StayedTraveledView,
+    build_stayed_traveled_view,
+    render_stayed_traveled_sections,
+    render_stayed_traveled_text,
+)
 
 # Aliases operators may type in the CLI panel
 _ACTION_ALIASES: dict[str, HitlAction] = {
@@ -76,9 +82,10 @@ class PanelView:
     actions: tuple[str, ...] = ("approve", "escalate", "reject")
     synthetic: bool = True
     operator_budget_s: int = 60
+    stayed_vs_traveled: Optional[StayedTraveledView] = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out = {
             "run_id": self.run_id,
             "provider": {
                 "provider_id": self.provider_id,
@@ -92,6 +99,9 @@ class PanelView:
             "operator_budget_s": self.operator_budget_s,
             "auto_approve": False,
         }
+        if self.stayed_vs_traveled is not None:
+            out["stayed_vs_traveled"] = self.stayed_vs_traveled.to_dict()
+        return out
 
 
 def bundle_to_panel_view(bundle: ClaimBundle) -> PanelView:
@@ -104,6 +114,7 @@ def bundle_to_panel_view(bundle: ClaimBundle) -> PanelView:
         display_name=bundle.provider.display_name,
         claims=claims,
         missing_nodes=tuple(bundle.missing_nodes()),
+        stayed_vs_traveled=build_stayed_traveled_view(bundle),
     )
 
 
@@ -130,6 +141,9 @@ def render_panel_text(view: PanelView) -> str:
         )
     if view.missing_nodes:
         lines.append(f"! Missing nodes: {', '.join(view.missing_nodes)}")
+    if view.stayed_vs_traveled is not None:
+        lines.append("")
+        lines.append(render_stayed_traveled_text(view.stayed_vs_traveled).rstrip())
     lines.extend(
         [
             "",
@@ -166,6 +180,26 @@ def render_panel_html(view: PanelView) -> str:
         else ""
     )
     payload = html.escape(json.dumps(view.to_dict(), indent=2))
+    stayed_block = ""
+    if view.stayed_vs_traveled is not None:
+        stayed_block = (
+            '<section id="stayed-traveled">'
+            "<h2>Stayed vs Traveled (F13)</h2>"
+            '<style>'
+            ".f13-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}"
+            "@media(max-width:800px){.f13-cols{grid-template-columns:1fr;}}"
+            ".f13-node{background:#fff;border:1px solid #e2e8f0;border-radius:10px;"
+            "padding:1rem;margin:1rem 0;}"
+            ".f13-node .count{color:#0f766e;}"
+            ".f13-node .col{border:1px solid #e2e8f0;border-radius:8px;padding:0.75rem;"
+            "background:#f8fafc;}"
+            ".f13-node .col.stayed{border-left:4px solid #64748b;}"
+            ".f13-node .col.traveled{border-left:4px solid #0ea5e9;}"
+            ".f13-node ul.paths{max-height:220px;overflow:auto;font-size:0.82rem;}"
+            "</style>"
+            + render_stayed_traveled_sections(view.stayed_vs_traveled)
+            + "</section>"
+        )
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -174,7 +208,7 @@ def render_panel_html(view: PanelView) -> str:
   <title>PrivCred HITL Claim Panel (F7)</title>
   <style>
     :root {{ font-family: ui-sans-serif, system-ui, sans-serif; color: #0f172a; }}
-    body {{ max-width: 880px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; }}
+    body {{ max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; }}
     h1 {{ font-size: 1.35rem; margin-bottom: 0.25rem; }}
     .meta {{ color: #475569; font-size: 0.95rem; margin-bottom: 1rem; }}
     .badge {{ display:inline-block; background:#e2e8f0; padding:0.15rem 0.5rem;
@@ -218,6 +252,7 @@ def render_panel_html(view: PanelView) -> str:
       {''.join(claims_rows)}
     </tbody>
   </table>
+  {stayed_block}
   <div class="actions">
     <button class="approve" type="button" onclick="decide('approve')">Approve</button>
     <button class="escalate" type="button" onclick="decide('escalate')">Escalate</button>

@@ -9,6 +9,7 @@ FLOWER-10 fallback).
 | Artifact | Path |
 |----------|------|
 | Offline run summary (regen) | `fixtures/g3/offline_demo_summary.json` |
+| Stayed vs traveled (F13) | `fixtures/g3/stayed_vs_traveled.{html,json}` |
 | Spoken fallback script | this file § Spoken fallback |
 | Grid handoff cue | `docs/f0-grid-tools.md` + `python scripts/run_f0_grid.py` |
 | HITL panel cue | `docs/f7-hitl.md` + `scripts/run_f7_hitl.py --serve` |

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://poppy.ai/schemas/privcred-f1-claims-v0.json",
   "title": "PrivCred F1 typed claims + synthetic provider fixtures",
-  "description": "F1 (FLOWER-11): four MVP claim types and SuperNode fixture layout. Synthetic only — no live CAQH/NPDB. Does not claim HITRUST, HIPAA-certified, or speed %.",
+  "description": "F1 (FLOWER-11): four MVP claim types and SuperNode fixture layout. Synthetic only \u2014 no live CAQH/NPDB. Does not claim HITRUST, HIPAA-certified, or speed %.",
   "definitions": {
     "f1_claim_type": {
       "type": "string",
@@ -15,120 +15,209 @@
     },
     "claim_entry": {
       "type": "object",
-      "required": ["value", "confidence"],
+      "required": [
+        "value",
+        "confidence"
+      ],
       "properties": {
         "value": {},
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "evidence_ref": { "type": ["string", "null"] },
-        "notes": { "type": "string" }
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "dispute_entry": {
       "type": "object",
-      "required": ["claim_type", "observed"],
+      "required": [
+        "claim_type",
+        "observed"
+      ],
       "properties": {
-        "claim_type": { "$ref": "#/definitions/f1_claim_type" },
+        "claim_type": {
+          "$ref": "#/definitions/f1_claim_type"
+        },
         "observed": {},
-        "period": { "type": "string" },
-        "reason": { "type": "string" },
-        "evidence_ref": { "type": ["string", "null"] }
+        "period": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       },
       "additionalProperties": false
     },
     "recheck_entry": {
       "type": "object",
-      "required": ["value", "resolves_dispute"],
+      "required": [
+        "value",
+        "resolves_dispute"
+      ],
       "properties": {
         "value": {},
-        "resolves_dispute": { "type": "boolean" },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "evidence_ref": { "type": ["string", "null"] },
-        "notes": { "type": "string" }
+        "resolves_dispute": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "rechecks": {
       "type": "object",
-      "additionalProperties": { "$ref": "#/definitions/recheck_entry" }
+      "additionalProperties": {
+        "$ref": "#/definitions/recheck_entry"
+      }
     },
     "disputes": {
       "type": "array",
-      "items": { "$ref": "#/definitions/dispute_entry" }
+      "items": {
+        "$ref": "#/definitions/dispute_entry"
+      }
     },
     "hospital_cred_slice": {
       "type": "object",
-      "required": ["work_history_complete"],
+      "required": [
+        "work_history_complete"
+      ],
       "properties": {
-        "work_history_complete": { "$ref": "#/definitions/claim_entry" },
-        "board_status": { "$ref": "#/definitions/claim_entry" }
+        "work_history_complete": {
+          "$ref": "#/definitions/claim_entry"
+        },
+        "board_status": {
+          "$ref": "#/definitions/claim_entry"
+        }
       },
       "additionalProperties": false
     },
     "payer_enrollment_slice": {
       "type": "object",
-      "required": ["license_active", "npi_enumerated", "exclusion_clear"],
+      "required": [
+        "license_active",
+        "npi_enumerated",
+        "exclusion_clear"
+      ],
       "properties": {
-        "license_active": { "$ref": "#/definitions/claim_entry" },
-        "npi_enumerated": { "$ref": "#/definitions/claim_entry" },
-        "exclusion_clear": { "$ref": "#/definitions/claim_entry" },
-        "enrollment_status": { "$ref": "#/definitions/claim_entry" }
+        "license_active": {
+          "$ref": "#/definitions/claim_entry"
+        },
+        "npi_enumerated": {
+          "$ref": "#/definitions/claim_entry"
+        },
+        "exclusion_clear": {
+          "$ref": "#/definitions/claim_entry"
+        },
+        "enrollment_status": {
+          "$ref": "#/definitions/claim_entry"
+        }
       },
       "additionalProperties": false
     },
     "provider_fixture": {
       "type": "object",
-      "required": ["provider_id", "display_name", "path", "hospital_cred", "payer_enrollment"],
+      "required": [
+        "provider_id",
+        "display_name",
+        "path",
+        "hospital_cred",
+        "payer_enrollment"
+      ],
       "properties": {
-        "provider_id": { "type": "string", "pattern": "^SYNTH-" },
-        "display_name": { "type": "string", "minLength": 1 },
-        "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
-        "hospital_cred": { "$ref": "#/definitions/hospital_cred_slice" },
-        "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" },
-        "rechecks": { "$ref": "#/definitions/rechecks" },
-        "disputes": { "$ref": "#/definitions/disputes" }
+        "provider_id": {
+          "type": "string",
+          "pattern": "^SYNTH-"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "enum": [
+            "happy",
+            "escalate",
+            "conflict"
+          ]
+        },
+        "hospital_cred": {
+          "$ref": "#/definitions/hospital_cred_slice"
+        },
+        "payer_enrollment": {
+          "$ref": "#/definitions/payer_enrollment_slice"
+        },
+        "rechecks": {
+          "$ref": "#/definitions/rechecks"
+        },
+        "disputes": {
+          "$ref": "#/definitions/disputes"
+        },
+        "local_record": {
+          "$ref": "#/definitions/local_record"
+        }
       },
       "additionalProperties": false
     },
     "providers_catalog": {
       "type": "object",
-      "required": ["meta", "providers"],
+      "required": [
+        "meta",
+        "providers"
+      ],
       "properties": {
         "meta": {
           "type": "object",
-          "required": ["synthetic"],
+          "required": [
+            "synthetic"
+          ],
           "properties": {
-            "synthetic": { "const": true },
-            "disclaimer": { "type": "string" },
-            "updated": { "type": "string" },
-            "layout": { "type": "string" },
-            "node": { "type": "string", "enum": ["HospitalCred", "PayerEnrollment", "Orchestrator"] }
-          },
-          "additionalProperties": true
-        },
-        "providers": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/definitions/provider_fixture" }
-        }
-      },
-      "additionalProperties": false
-    },
-    "hospital_node_catalog": {
-      "type": "object",
-      "required": ["meta", "providers"],
-      "properties": {
-        "meta": {
-          "type": "object",
-          "required": ["synthetic", "node"],
-          "properties": {
-            "synthetic": { "const": true },
-            "node": { "const": "HospitalCred" },
-            "disclaimer": { "type": "string" },
-            "updated": { "type": "string" },
-            "f1_claims": {
-              "type": "array",
-              "items": { "const": "work_history_complete" }
+            "synthetic": {
+              "const": true
+            },
+            "disclaimer": {
+              "type": "string"
+            },
+            "updated": {
+              "type": "string"
+            },
+            "layout": {
+              "type": "string"
+            },
+            "node": {
+              "type": "string",
+              "enum": [
+                "HospitalCred",
+                "PayerEnrollment",
+                "Orchestrator"
+              ]
             }
           },
           "additionalProperties": true
@@ -137,38 +226,42 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "type": "object",
-            "required": ["provider_id", "path", "hospital_cred"],
-            "properties": {
-              "provider_id": { "type": "string", "pattern": "^SYNTH-" },
-              "display_name": { "type": "string" },
-              "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
-              "hospital_cred": { "$ref": "#/definitions/hospital_cred_slice" },
-              "rechecks": { "$ref": "#/definitions/rechecks" }
-            },
-            "additionalProperties": false
+            "$ref": "#/definitions/provider_fixture"
           }
         }
       },
       "additionalProperties": false
     },
-    "payer_node_catalog": {
+    "hospital_node_catalog": {
       "type": "object",
-      "required": ["meta", "providers"],
+      "required": [
+        "meta",
+        "providers"
+      ],
       "properties": {
         "meta": {
           "type": "object",
-          "required": ["synthetic", "node"],
+          "required": [
+            "synthetic",
+            "node"
+          ],
           "properties": {
-            "synthetic": { "const": true },
-            "node": { "const": "PayerEnrollment" },
-            "disclaimer": { "type": "string" },
-            "updated": { "type": "string" },
+            "synthetic": {
+              "const": true
+            },
+            "node": {
+              "const": "HospitalCred"
+            },
+            "disclaimer": {
+              "type": "string"
+            },
+            "updated": {
+              "type": "string"
+            },
             "f1_claims": {
               "type": "array",
               "items": {
-                "type": "string",
-                "enum": ["license_active", "npi_enumerated", "exclusion_clear"]
+                "const": "work_history_complete"
               }
             }
           },
@@ -179,19 +272,129 @@
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["provider_id", "path", "payer_enrollment"],
+            "required": [
+              "provider_id",
+              "path",
+              "hospital_cred"
+            ],
             "properties": {
-              "provider_id": { "type": "string", "pattern": "^SYNTH-" },
-              "display_name": { "type": "string" },
-              "path": { "type": "string", "enum": ["happy", "escalate", "conflict"] },
-              "payer_enrollment": { "$ref": "#/definitions/payer_enrollment_slice" },
-              "disputes": { "$ref": "#/definitions/disputes" }
+              "provider_id": {
+                "type": "string",
+                "pattern": "^SYNTH-"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string",
+                "enum": [
+                  "happy",
+                  "escalate",
+                  "conflict"
+                ]
+              },
+              "hospital_cred": {
+                "$ref": "#/definitions/hospital_cred_slice"
+              },
+              "rechecks": {
+                "$ref": "#/definitions/rechecks"
+              },
+              "local_record": {
+                "$ref": "#/definitions/local_record"
+              }
             },
             "additionalProperties": false
           }
         }
       },
       "additionalProperties": false
+    },
+    "payer_node_catalog": {
+      "type": "object",
+      "required": [
+        "meta",
+        "providers"
+      ],
+      "properties": {
+        "meta": {
+          "type": "object",
+          "required": [
+            "synthetic",
+            "node"
+          ],
+          "properties": {
+            "synthetic": {
+              "const": true
+            },
+            "node": {
+              "const": "PayerEnrollment"
+            },
+            "disclaimer": {
+              "type": "string"
+            },
+            "updated": {
+              "type": "string"
+            },
+            "f1_claims": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "license_active",
+                  "npi_enumerated",
+                  "exclusion_clear"
+                ]
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "providers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "provider_id",
+              "path",
+              "payer_enrollment"
+            ],
+            "properties": {
+              "provider_id": {
+                "type": "string",
+                "pattern": "^SYNTH-"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string",
+                "enum": [
+                  "happy",
+                  "escalate",
+                  "conflict"
+                ]
+              },
+              "payer_enrollment": {
+                "$ref": "#/definitions/payer_enrollment_slice"
+              },
+              "disputes": {
+                "$ref": "#/definitions/disputes"
+              },
+              "local_record": {
+                "$ref": "#/definitions/local_record"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "local_record": {
+      "type": "object",
+      "description": "Synthetic local dossier that stays at the SuperNode (F13). Never egressed as traveled payload.",
+      "additionalProperties": true
     }
   }
 }

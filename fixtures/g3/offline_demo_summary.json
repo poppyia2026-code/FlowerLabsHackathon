@@ -1,7 +1,7 @@
 {
   "synthetic": true,
   "mode": "g3_failsoft_offline",
-  "disclaimer": "Offline demo path when SuperGrid flakes. Fixtures only - no live CAQH/NPDB/PHI. Not HITRUST / HIPAA-certified.",
+  "disclaimer": "Offline demo path when SuperGrid flakes. Fixtures only \u2014 no live CAQH/NPDB/PHI. Not HITRUST / HIPAA-certified.",
   "grid_handoff": {
     "ok": true,
     "roles_contacted": [
@@ -27,7 +27,7 @@
     "synthetic": true
   },
   "credentialing": {
-    "run_id": "run-026d849f0907",
+    "run_id": "run-f5c5e51583c2",
     "outcome": "credentialed",
     "provider_id": "SYNTH-NPI-1999999999",
     "network_id": "SYNTH-NETWORK-X",
@@ -81,11 +81,11 @@
       "action": "approve",
       "actor": "dry-run-auto",
       "reason": "Auto-approve for local dry-run (synthetic fixtures only)",
-      "decided_at": 1790709359.2437155
+      "decided_at": 1790717524.3286994
     },
     "receipt": {
-      "receipt_id": "rcpt-2052ba6276b9",
-      "run_id": "run-026d849f0907",
+      "receipt_id": "rcpt-1c08b3232c99",
+      "run_id": "run-f5c5e51583c2",
       "provider": {
         "provider_id": "SYNTH-NPI-1999999999",
         "network_id": "SYNTH-NETWORK-X",
@@ -96,7 +96,7 @@
         "action": "approve",
         "actor": "dry-run-auto",
         "reason": "Auto-approve for local dry-run (synthetic fixtures only)",
-        "decided_at": 1790709359.2437155
+        "decided_at": 1790717524.3286994
       },
       "claims_snapshot": [
         {
@@ -143,7 +143,7 @@
         }
       ],
       "message": "Verification completed under human supervision. Synthetic demo \u2014 not a production credentialing decision. Not a HITRUST or HIPAA-certified audit packet.",
-      "issued_at": 1790709359.2437499,
+      "issued_at": 1790717524.3287408,
       "synthetic": true
     },
     "hitl_pause_reached": true,
@@ -154,13 +154,15 @@
       "claim_request.PayerEnrollment",
       "claim_response.PayerEnrollment",
       "claims_aggregated",
+      "endeavor_assist",
       "hitl_pause",
       "claim_receipt",
       "complete"
     ],
-    "synthetic": true
+    "synthetic": true,
+    "endeavor_optional": true
   },
-  "receipt_text": "\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557\n\u2551  PrivCred \u2014 AUDITABLE CLAIM RECEIPT (synthetic MVP)     \u2551\n\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\n  receipt_id : rcpt-2052ba6276b9\n  run_id     : run-026d849f0907\n  outcome    : credentialed\n  issued_at  : 2026-09-29T19:15:59Z\n  synthetic  : True\n\n  Provider\n    id      : SYNTH-NPI-1999999999\n    network : SYNTH-NETWORK-X\n    name    : Synthetic Provider P (happy path)\n\n  HITL\n    action  : approve\n    actor   : dry-run-auto\n    reason  : Auto-approve for local dry-run (synthetic fixtures only)\n\n  Claims snapshot (6)\n    \u2022 board_status = 'clear' (conf=0.95, ref=fixture://hospital/board#P)\n    \u2022 work_history_complete = True (conf=0.98, ref=fixture://hospital/work_history#P)\n    \u2022 enrollment_status = 'enrolled' (conf=0.9, ref=fixture://payer/enrollment#P)\n    \u2022 exclusion_clear = True (conf=0.97, ref=fixture://payer/exclusion#P)\n    \u2022 license_active = True (conf=0.99, ref=fixture://payer/license#P)\n    \u2022 npi_enumerated = True (conf=1.0, ref=fixture://payer/npi#P)\n\n  Message: Verification completed under human supervision. Synthetic demo \u2014 not a production credentialing decision. Not a HITRUST or HIPAA-certified audit packet.\n\n  NOTE: Synthetic demo receipt \u2014 not a production credentialing\n  decision. Not a HITRUST / HIPAA-certified audit packet.\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n",
+  "receipt_text": "\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557\n\u2551  PrivCred \u2014 AUDITABLE CLAIM RECEIPT (synthetic MVP)     \u2551\n\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\n  receipt_id : rcpt-1c08b3232c99\n  run_id     : run-f5c5e51583c2\n  outcome    : credentialed\n  issued_at  : 2026-09-29T21:32:04Z\n  synthetic  : True\n\n  Provider\n    id      : SYNTH-NPI-1999999999\n    network : SYNTH-NETWORK-X\n    name    : Synthetic Provider P (happy path)\n\n  HITL\n    action  : approve\n    actor   : dry-run-auto\n    reason  : Auto-approve for local dry-run (synthetic fixtures only)\n\n  Claims snapshot (6)\n    \u2022 board_status = 'clear' (conf=0.95, ref=fixture://hospital/board#P)\n    \u2022 work_history_complete = True (conf=0.98, ref=fixture://hospital/work_history#P)\n    \u2022 enrollment_status = 'enrolled' (conf=0.9, ref=fixture://payer/enrollment#P)\n    \u2022 exclusion_clear = True (conf=0.97, ref=fixture://payer/exclusion#P)\n    \u2022 license_active = True (conf=0.99, ref=fixture://payer/license#P)\n    \u2022 npi_enumerated = True (conf=1.0, ref=fixture://payer/npi#P)\n\n  Message: Verification completed under human supervision. Synthetic demo \u2014 not a production credentialing decision. Not a HITRUST or HIPAA-certified audit packet.\n\n  NOTE: Synthetic demo receipt \u2014 not a production credentialing\n  decision. Not a HITRUST / HIPAA-certified audit packet.\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n",
   "spoken_fallback_doc": "docs/g3-failsoft.md",
   "g1_runbook": "docs/g1-demo-runbook.md"
 }

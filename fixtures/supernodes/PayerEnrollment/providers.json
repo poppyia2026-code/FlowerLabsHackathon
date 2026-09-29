@@ -2,9 +2,13 @@
   "meta": {
     "synthetic": true,
     "node": "PayerEnrollment",
-    "disclaimer": "Synthetic PayerEnrollment shard for Flower hackathon. Claims only — no raw dossiers. Not real providers. No live CAQH/NPDB.",
+    "disclaimer": "Synthetic PayerEnrollment shard for Flower hackathon. Claims only \u2014 no raw dossiers. Not real providers. No live CAQH/NPDB.",
     "updated": "2026-09-29",
-    "f1_claims": ["license_active", "npi_enumerated", "exclusion_clear"],
+    "f1_claims": [
+      "license_active",
+      "npi_enumerated",
+      "exclusion_clear"
+    ],
     "layout": "fixtures/supernodes/PayerEnrollment/providers.json"
   },
   "providers": [
@@ -37,6 +41,55 @@
           "evidence_ref": "fixture://payer/enrollment#P",
           "notes": "Synth enrolled in network X"
         }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider P (happy path)",
+        "tax_id_internal": "SYNTH-TIN-9999",
+        "npi": "1999999999",
+        "license": {
+          "state": "CA",
+          "number": "SYNTH-MD-9999",
+          "status": "active",
+          "issued": "2011-08-01",
+          "expires": "2027-08-01"
+        },
+        "enrollment": {
+          "network_id": "SYNTH-NETWORK-X",
+          "product_lines": [
+            "HMO",
+            "PPO"
+          ],
+          "effective_date": "2016-01-01",
+          "recredential_due": "2027-01-01",
+          "status_internal": "enrolled"
+        },
+        "banking": {
+          "payee_name": "Synthetic Provider P (happy path) PLLC",
+          "account_last4": "0000",
+          "routing_last4": "1111"
+        },
+        "exclusion_screen": {
+          "oig_like_clear": true,
+          "sam_like_clear": true,
+          "last_screened": "2026-09-01"
+        },
+        "practice_locations": [
+          {
+            "name": "Synth Clinic A",
+            "npi_loc": "1999999990",
+            "tin_loc": "SYNTH-TIN-A"
+          },
+          {
+            "name": "Synth Hospital B ambulatory",
+            "npi_loc": "1999999991",
+            "tin_loc": "SYNTH-TIN-B"
+          }
+        ],
+        "internal_notes": "Fixture-only payer dossier. Typed claims only leave the node.",
+        "claims_history_summary": {
+          "ytd_claims": 1204,
+          "denial_rate_internal": 0.04
+        }
       }
     },
     {
@@ -60,13 +113,62 @@
           "value": false,
           "confidence": 0.8,
           "evidence_ref": "fixture://payer/exclusion#Q",
-          "notes": "Synth exclusion bit set — human must review"
+          "notes": "Synth exclusion bit set \u2014 human must review"
         },
         "enrollment_status": {
           "value": "pending",
           "confidence": 0.75,
           "evidence_ref": "fixture://payer/enrollment#Q",
           "notes": "Enrollment pending"
+        }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider Q (HITL escalate path)",
+        "tax_id_internal": "SYNTH-TIN-8888",
+        "npi": "1888888888",
+        "license": {
+          "state": "CA",
+          "number": "SYNTH-MD-8888",
+          "status": "active",
+          "issued": "2011-08-01",
+          "expires": "2027-08-01"
+        },
+        "enrollment": {
+          "network_id": "SYNTH-NETWORK-X",
+          "product_lines": [
+            "HMO",
+            "PPO"
+          ],
+          "effective_date": "2016-01-01",
+          "recredential_due": "2027-01-01",
+          "status_internal": "pending"
+        },
+        "banking": {
+          "payee_name": "Synthetic Provider Q (HITL escalate path) PLLC",
+          "account_last4": "0000",
+          "routing_last4": "1111"
+        },
+        "exclusion_screen": {
+          "oig_like_clear": false,
+          "sam_like_clear": true,
+          "last_screened": "2026-09-01"
+        },
+        "practice_locations": [
+          {
+            "name": "Synth Clinic A",
+            "npi_loc": "1999999990",
+            "tin_loc": "SYNTH-TIN-A"
+          },
+          {
+            "name": "Synth Hospital B ambulatory",
+            "npi_loc": "1999999991",
+            "tin_loc": "SYNTH-TIN-B"
+          }
+        ],
+        "internal_notes": "Fixture-only payer dossier. Typed claims only leave the node.",
+        "claims_history_summary": {
+          "ytd_claims": 1204,
+          "denial_rate_internal": 0.04
         }
       }
     },
@@ -108,7 +210,56 @@
           "reason": "Enrollment application lists no practice location for 7 months",
           "evidence_ref": "fixture://payer/application#R"
         }
-      ]
+      ],
+      "local_record": {
+        "legal_name": "Synthetic Provider R (sources disagree, explained)",
+        "tax_id_internal": "SYNTH-TIN-7777",
+        "npi": "1777777777",
+        "license": {
+          "state": "CA",
+          "number": "SYNTH-MD-7777",
+          "status": "active",
+          "issued": "2011-08-01",
+          "expires": "2027-08-01"
+        },
+        "enrollment": {
+          "network_id": "SYNTH-NETWORK-X",
+          "product_lines": [
+            "HMO",
+            "PPO"
+          ],
+          "effective_date": "2016-01-01",
+          "recredential_due": "2027-01-01",
+          "status_internal": "pending"
+        },
+        "banking": {
+          "payee_name": "Synthetic Provider R (sources disagree, explained) PLLC",
+          "account_last4": "0000",
+          "routing_last4": "1111"
+        },
+        "exclusion_screen": {
+          "oig_like_clear": true,
+          "sam_like_clear": true,
+          "last_screened": "2026-09-01"
+        },
+        "practice_locations": [
+          {
+            "name": "Synth Clinic A",
+            "npi_loc": "1999999990",
+            "tin_loc": "SYNTH-TIN-A"
+          },
+          {
+            "name": "Synth Hospital B ambulatory",
+            "npi_loc": "1999999991",
+            "tin_loc": "SYNTH-TIN-B"
+          }
+        ],
+        "internal_notes": "Fixture-only payer dossier. Typed claims only leave the node.",
+        "claims_history_summary": {
+          "ytd_claims": 1204,
+          "denial_rate_internal": 0.04
+        }
+      }
     },
     {
       "provider_id": "SYNTH-NPI-1666666666",
@@ -148,7 +299,56 @@
           "reason": "Enrollment application lists no practice location for 7 months",
           "evidence_ref": "fixture://payer/application#S"
         }
-      ]
+      ],
+      "local_record": {
+        "legal_name": "Synthetic Provider S (sources disagree, unresolved)",
+        "tax_id_internal": "SYNTH-TIN-6666",
+        "npi": "1666666666",
+        "license": {
+          "state": "CA",
+          "number": "SYNTH-MD-6666",
+          "status": "active",
+          "issued": "2011-08-01",
+          "expires": "2027-08-01"
+        },
+        "enrollment": {
+          "network_id": "SYNTH-NETWORK-X",
+          "product_lines": [
+            "HMO",
+            "PPO"
+          ],
+          "effective_date": "2016-01-01",
+          "recredential_due": "2027-01-01",
+          "status_internal": "pending"
+        },
+        "banking": {
+          "payee_name": "Synthetic Provider S (sources disagree, unresolved) PLLC",
+          "account_last4": "0000",
+          "routing_last4": "1111"
+        },
+        "exclusion_screen": {
+          "oig_like_clear": true,
+          "sam_like_clear": true,
+          "last_screened": "2026-09-01"
+        },
+        "practice_locations": [
+          {
+            "name": "Synth Clinic A",
+            "npi_loc": "1999999990",
+            "tin_loc": "SYNTH-TIN-A"
+          },
+          {
+            "name": "Synth Hospital B ambulatory",
+            "npi_loc": "1999999991",
+            "tin_loc": "SYNTH-TIN-B"
+          }
+        ],
+        "internal_notes": "Fixture-only payer dossier. Typed claims only leave the node.",
+        "claims_history_summary": {
+          "ytd_claims": 1204,
+          "denial_rate_internal": 0.04
+        }
+      }
     }
   ]
 }

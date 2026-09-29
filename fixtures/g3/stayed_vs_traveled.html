@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PrivCred Stayed vs Traveled (F13)</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, sans-serif; color: #0f172a; }
+    body { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; background: #f8fafc; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .meta { color: #475569; font-size: 0.95rem; }
+    .badge { display:inline-block; background:#e2e8f0; padding:0.15rem 0.5rem;
+              border-radius:999px; font-size:0.8rem; margin-right:0.35rem; }
+    .badge.ok { background:#dcfce7; }
+    .node { background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+             padding:1rem 1.1rem; margin:1.25rem 0; }
+    .node h2 { margin:0 0 0.35rem; font-size:1.15rem; }
+    .count { color:#0f766e; margin:0.25rem 0 0.75rem; }
+    .cols { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width: 800px) { .cols { grid-template-columns:1fr; } }
+    .col { border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem; background:#f8fafc; }
+    .col.stayed { border-left:4px solid #64748b; }
+    .col.traveled { border-left:4px solid #0ea5e9; }
+    .col h3 { margin:0 0 0.35rem; font-size:1rem; }
+    .sub { font-size:0.8rem; color:#64748b; margin:0 0 0.5rem; }
+    ul.paths { max-height:280px; overflow:auto; margin:0; padding-left:1.1rem;
+                font-size:0.82rem; }
+    table { width:100%; border-collapse:collapse; background:#fff; font-size:0.88rem; }
+    th, td { text-align:left; padding:0.4rem 0.55rem; border-bottom:1px solid #e2e8f0; }
+    th { background:#f1f5f9; }
+    .warn { color:#b45309; }
+    .note { font-size:0.85rem; color:#64748b; margin-top:1rem; }
+    pre { background:#0f172a; color:#e2e8f0; padding:0.75rem; border-radius:8px;
+           overflow:auto; font-size:0.72rem; max-height:260px; }
+  </style>
+</head>
+<body>
+  <h1>Stayed vs Traveled</h1>
+  <p class="meta">
+    <span class="badge ok">synthetic</span>
+    <span class="badge">F13 / FLOWER-34</span>
+  </p>
+  <p><strong>Synthetic Provider P (happy path)</strong>
+     (<code>SYNTH-NPI-1999999999</code>)</p>
+  <p class="meta">Run <code>g3-stayed-traveled</code></p>
+  
+    <section class="node f13-node">
+      <h2>HospitalCred</h2>
+      <p class="count"><strong>40 fields stayed, 2 typed claims traveled</strong></p>
+      
+      <div class="cols f13-cols">
+        <div class="col stayed">
+          <h3>Stayed at node</h3>
+          <p class="sub">40 leaf fields
+             — inventory only (values never egressed)</p>
+          <ul class="paths"><li><code>legal_name</code></li><li><code>preferred_name</code></li><li><code>specialty_primary</code></li><li><code>specialty_secondary</code></li><li><code>npi_local</code></li><li><code>dea_number_internal</code></li><li><code>education.medical_school</code></li><li><code>education.graduation_year</code></li><li><code>education.residency_program</code></li><li><code>education.residency_years</code></li><li><code>education.fellowship</code></li><li><code>work_history[0].employer</code></li><li><code>work_history[0].title</code></li><li><code>work_history[0].start</code></li><li><code>work_history[0].end</code></li><li><code>work_history[0].fte</code></li><li><code>work_history[1].employer</code></li><li><code>work_history[1].title</code></li><li><code>work_history[1].start</code></li><li><code>work_history[1].end</code></li><li><code>work_history[1].fte</code></li><li><code>addresses.practice.line1</code></li><li><code>addresses.practice.city</code></li><li><code>addresses.practice.state</code></li><li><code>addresses.practice.zip</code></li><li><code>addresses.mailing.line1</code></li><li><code>addresses.mailing.city</code></li><li><code>addresses.mailing.state</code></li><li><code>addresses.mailing.zip</code></li><li><code>privileges.active_status</code></li><li><code>privileges.departments[0]</code></li><li><code>privileges.departments[1]</code></li><li><code>privileges.admit_rights</code></li><li><code>privileges.or_privileges</code></li><li><code>board.specialty_board</code></li><li><code>board.certification_status</code></li><li><code>board.expiration_year</code></li><li><code>internal_notes</code></li><li><code>hr_flags.background_check_internal</code></li><li><code>hr_flags.peer_review_open</code></li></ul>
+        </div>
+        <div class="col traveled">
+          <h3>Traveled (typed claims)</h3>
+          <p class="sub">2 claim(s) in reply payload</p>
+          <table>
+            <thead><tr><th>Claim</th><th>Value</th><th>Confidence</th></tr></thead>
+            <tbody><tr><td>board_status</td><td><code>&#x27;clear&#x27;</code></td><td>0.95</td></tr><tr><td>work_history_complete</td><td><code>True</code></td><td>0.98</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="node f13-node">
+      <h2>PayerEnrollment</h2>
+      <p class="count"><strong>29 fields stayed, 4 typed claims traveled</strong></p>
+      
+      <div class="cols f13-cols">
+        <div class="col stayed">
+          <h3>Stayed at node</h3>
+          <p class="sub">29 leaf fields
+             — inventory only (values never egressed)</p>
+          <ul class="paths"><li><code>legal_name</code></li><li><code>tax_id_internal</code></li><li><code>npi</code></li><li><code>license.state</code></li><li><code>license.number</code></li><li><code>license.status</code></li><li><code>license.issued</code></li><li><code>license.expires</code></li><li><code>enrollment.network_id</code></li><li><code>enrollment.product_lines[0]</code></li><li><code>enrollment.product_lines[1]</code></li><li><code>enrollment.effective_date</code></li><li><code>enrollment.recredential_due</code></li><li><code>enrollment.status_internal</code></li><li><code>banking.payee_name</code></li><li><code>banking.account_last4</code></li><li><code>banking.routing_last4</code></li><li><code>exclusion_screen.oig_like_clear</code></li><li><code>exclusion_screen.sam_like_clear</code></li><li><code>exclusion_screen.last_screened</code></li><li><code>practice_locations[0].name</code></li><li><code>practice_locations[0].npi_loc</code></li><li><code>practice_locations[0].tin_loc</code></li><li><code>practice_locations[1].name</code></li><li><code>practice_locations[1].npi_loc</code></li><li><code>practice_locations[1].tin_loc</code></li><li><code>internal_notes</code></li><li><code>claims_history_summary.ytd_claims</code></li><li><code>claims_history_summary.denial_rate_internal</code></li></ul>
+        </div>
+        <div class="col traveled">
+          <h3>Traveled (typed claims)</h3>
+          <p class="sub">4 claim(s) in reply payload</p>
+          <table>
+            <thead><tr><th>Claim</th><th>Value</th><th>Confidence</th></tr></thead>
+            <tbody><tr><td>enrollment_status</td><td><code>&#x27;enrolled&#x27;</code></td><td>0.9</td></tr><tr><td>exclusion_clear</td><td><code>True</code></td><td>0.97</td></tr><tr><td>license_active</td><td><code>True</code></td><td>0.99</td></tr><tr><td>npi_enumerated</td><td><code>True</code></td><td>1.0</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  <p class="note">
+    Built from ClaimResponse privacy_summary already on the run — no extra network calls.
+    Not a HITRUST or HIPAA-certified product claim. No live CAQH/NPDB.
+  </p>
+  <details><summary>View JSON</summary><pre>{
+  &quot;run_id&quot;: &quot;g3-stayed-traveled&quot;,
+  &quot;provider_id&quot;: &quot;SYNTH-NPI-1999999999&quot;,
+  &quot;display_name&quot;: &quot;Synthetic Provider P (happy path)&quot;,
+  &quot;synthetic&quot;: true,
+  &quot;nodes&quot;: [
+    {
+      &quot;node_name&quot;: &quot;HospitalCred&quot;,
+      &quot;ok&quot;: true,
+      &quot;stayed_field_count&quot;: 40,
+      &quot;stayed_preview&quot;: [
+        &quot;legal_name&quot;,
+        &quot;preferred_name&quot;,
+        &quot;specialty_primary&quot;,
+        &quot;specialty_secondary&quot;,
+        &quot;npi_local&quot;,
+        &quot;dea_number_internal&quot;,
+        &quot;education.medical_school&quot;,
+        &quot;education.graduation_year&quot;,
+        &quot;education.residency_program&quot;,
+        &quot;education.residency_years&quot;,
+        &quot;education.fellowship&quot;,
+        &quot;work_history[0].employer&quot;,
+        &quot;work_history[0].title&quot;,
+        &quot;work_history[0].start&quot;,
+        &quot;work_history[0].end&quot;,
+        &quot;work_history[0].fte&quot;,
+        &quot;work_history[1].employer&quot;,
+        &quot;work_history[1].title&quot;,
+        &quot;work_history[1].start&quot;,
+        &quot;work_history[1].end&quot;,
+        &quot;work_history[1].fte&quot;,
+        &quot;addresses.practice.line1&quot;,
+        &quot;addresses.practice.city&quot;,
+        &quot;addresses.practice.state&quot;,
+        &quot;addresses.practice.zip&quot;,
+        &quot;addresses.mailing.line1&quot;,
+        &quot;addresses.mailing.city&quot;,
+        &quot;addresses.mailing.state&quot;,
+        &quot;addresses.mailing.zip&quot;,
+        &quot;privileges.active_status&quot;,
+        &quot;privileges.departments[0]&quot;,
+        &quot;privileges.departments[1]&quot;,
+        &quot;privileges.admit_rights&quot;,
+        &quot;privileges.or_privileges&quot;,
+        &quot;board.specialty_board&quot;,
+        &quot;board.certification_status&quot;,
+        &quot;board.expiration_year&quot;,
+        &quot;internal_notes&quot;,
+        &quot;hr_flags.background_check_internal&quot;,
+        &quot;hr_flags.peer_review_open&quot;
+      ],
+      &quot;traveled_claims&quot;: [
+        {
+          &quot;claim_type&quot;: &quot;board_status&quot;,
+          &quot;value&quot;: &quot;clear&quot;,
+          &quot;confidence&quot;: 0.95,
+          &quot;evidence_ref&quot;: &quot;fixture://hospital/board#P&quot;,
+          &quot;notes&quot;: &quot;No board flags in synthetic set&quot;
+        },
+        {
+          &quot;claim_type&quot;: &quot;work_history_complete&quot;,
+          &quot;value&quot;: true,
+          &quot;confidence&quot;: 0.98,
+          &quot;evidence_ref&quot;: &quot;fixture://hospital/work_history#P&quot;,
+          &quot;notes&quot;: &quot;Synth work-history shard complete&quot;
+        }
+      ],
+      &quot;traveled_claim_count&quot;: 2,
+      &quot;count_line&quot;: &quot;40 fields stayed, 2 typed claims traveled&quot;,
+      &quot;error&quot;: null
+    },
+    {
+      &quot;node_name&quot;: &quot;PayerEnrollment&quot;,
+      &quot;ok&quot;: true,
+      &quot;stayed_field_count&quot;: 29,
+      &quot;stayed_preview&quot;: [
+        &quot;legal_name&quot;,
+        &quot;tax_id_internal&quot;,
+        &quot;npi&quot;,
+        &quot;license.state&quot;,
+        &quot;license.number&quot;,
+        &quot;license.status&quot;,
+        &quot;license.issued&quot;,
+        &quot;license.expires&quot;,
+        &quot;enrollment.network_id&quot;,
+        &quot;enrollment.product_lines[0]&quot;,
+        &quot;enrollment.product_lines[1]&quot;,
+        &quot;enrollment.effective_date&quot;,
+        &quot;enrollment.recredential_due&quot;,
+        &quot;enrollment.status_internal&quot;,
+        &quot;banking.payee_name&quot;,
+        &quot;banking.account_last4&quot;,
+        &quot;banking.routing_last4&quot;,
+        &quot;exclusion_screen.oig_like_clear&quot;,
+        &quot;exclusion_screen.sam_like_clear&quot;,
+        &quot;exclusion_screen.last_screened&quot;,
+        &quot;practice_locations[0].name&quot;,
+        &quot;practice_locations[0].npi_loc&quot;,
+        &quot;practice_locations[0].tin_loc&quot;,
+        &quot;practice_locations[1].name&quot;,
+        &quot;practice_locations[1].npi_loc&quot;,
+        &quot;practice_locations[1].tin_loc&quot;,
+        &quot;internal_notes&quot;,
+        &quot;claims_history_summary.ytd_claims&quot;,
+        &quot;claims_history_summary.denial_rate_internal&quot;
+      ],
+      &quot;traveled_claims&quot;: [
+        {
+          &quot;claim_type&quot;: &quot;enrollment_status&quot;,
+          &quot;value&quot;: &quot;enrolled&quot;,
+          &quot;confidence&quot;: 0.9,
+          &quot;evidence_ref&quot;: &quot;fixture://payer/enrollment#P&quot;,
+          &quot;notes&quot;: &quot;Synth enrolled in network X&quot;
+        },
+        {
+          &quot;claim_type&quot;: &quot;exclusion_clear&quot;,
+          &quot;value&quot;: true,
+          &quot;confidence&quot;: 0.97,
+          &quot;evidence_ref&quot;: &quot;fixture://payer/exclusion#P&quot;,
+          &quot;notes&quot;: &quot;Synth OIG-like exclusion clear&quot;
+        },
+        {
+          &quot;claim_type&quot;: &quot;license_active&quot;,
+          &quot;value&quot;: true,
+          &quot;confidence&quot;: 0.99,
+          &quot;evidence_ref&quot;: &quot;fixture://payer/license#P&quot;,
+          &quot;notes&quot;: &quot;Synth state license active&quot;
+        },
+        {
+          &quot;claim_type&quot;: &quot;npi_enumerated&quot;,
+          &quot;value&quot;: true,
+          &quot;confidence&quot;: 1.0,
+          &quot;evidence_ref&quot;: &quot;fixture://payer/npi#P&quot;,
+          &quot;notes&quot;: &quot;Fake NPI enumerated in synth registry&quot;
+        }
+      ],
+      &quot;traveled_claim_count&quot;: 4,
+      &quot;count_line&quot;: &quot;29 fields stayed, 4 typed claims traveled&quot;,
+      &quot;error&quot;: null
+    }
+  ],
+  &quot;disclaimer&quot;: &quot;Synthetic fixtures only \u2014 no live CAQH/NPDB. Field paths stayed local; typed claims traveled. Not a HITRUST or HIPAA-certified product claim.&quot;
+}</pre></details>
+</body>
+</html>

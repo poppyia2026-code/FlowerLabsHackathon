@@ -2,9 +2,11 @@
   "meta": {
     "synthetic": true,
     "node": "HospitalCred",
-    "disclaimer": "Synthetic HospitalCred shard for Flower hackathon. Claims only — no raw dossiers. Not real providers. No live CAQH/NPDB.",
+    "disclaimer": "Synthetic HospitalCred shard for Flower hackathon. Claims only \u2014 no raw dossiers. Not real providers. No live CAQH/NPDB.",
     "updated": "2026-09-29",
-    "f1_claims": ["work_history_complete"],
+    "f1_claims": [
+      "work_history_complete"
+    ],
     "layout": "fixtures/supernodes/HospitalCred/providers.json"
   },
   "providers": [
@@ -25,6 +27,70 @@
           "evidence_ref": "fixture://hospital/board#P",
           "notes": "No board flags in synthetic set"
         }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider P (happy path)",
+        "preferred_name": "Dr. SYNTH-NPI-1999999999",
+        "specialty_primary": "Internal Medicine",
+        "specialty_secondary": "Hospital Medicine",
+        "npi_local": "1999999999",
+        "dea_number_internal": "SYNTH-DEA-9999",
+        "education": {
+          "medical_school": "Synth University SOM",
+          "graduation_year": 2008,
+          "residency_program": "Synth General Hospital IM",
+          "residency_years": "2008-2011",
+          "fellowship": "none"
+        },
+        "work_history": [
+          {
+            "employer": "Synth Clinic A",
+            "title": "Staff Physician",
+            "start": "2011-07",
+            "end": "2016-06",
+            "fte": 1.0
+          },
+          {
+            "employer": "Synth Hospital B",
+            "title": "Hospitalist",
+            "start": "2016-07",
+            "end": "present",
+            "fte": 0.8
+          }
+        ],
+        "addresses": {
+          "practice": {
+            "line1": "100 Synth Ave",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90000"
+          },
+          "mailing": {
+            "line1": "PO Box 999",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90001"
+          }
+        },
+        "privileges": {
+          "active_status": "active",
+          "departments": [
+            "Medicine",
+            "Hospitalist Service"
+          ],
+          "admit_rights": true,
+          "or_privileges": false
+        },
+        "board": {
+          "specialty_board": "ABIM (synth)",
+          "certification_status": "certified",
+          "expiration_year": 2028
+        },
+        "internal_notes": "Fixture-only hospital dossier. Never egresses as traveled payload.",
+        "hr_flags": {
+          "background_check_internal": "clear",
+          "peer_review_open": false
+        }
       }
     },
     {
@@ -36,13 +102,84 @@
           "value": false,
           "confidence": 0.7,
           "evidence_ref": "fixture://hospital/work_history#Q",
-          "notes": "Gap in synth work history — escalate"
+          "notes": "Gap in synth work history \u2014 escalate"
         },
         "board_status": {
           "value": "flagged",
           "confidence": 0.85,
           "evidence_ref": "fixture://hospital/board#Q",
           "notes": "Synthetic board flag for demo escalate path"
+        }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider Q (HITL escalate path)",
+        "preferred_name": "Dr. SYNTH-NPI-1888888888",
+        "specialty_primary": "Internal Medicine",
+        "specialty_secondary": "Hospital Medicine",
+        "npi_local": "1888888888",
+        "dea_number_internal": "SYNTH-DEA-8888",
+        "education": {
+          "medical_school": "Synth University SOM",
+          "graduation_year": 2008,
+          "residency_program": "Synth General Hospital IM",
+          "residency_years": "2008-2011",
+          "fellowship": "none"
+        },
+        "work_history": [
+          {
+            "employer": "Synth Clinic A",
+            "title": "Staff Physician",
+            "start": "2011-07",
+            "end": "2016-06",
+            "fte": 1.0
+          },
+          {
+            "employer": "Synth Hospital B",
+            "title": "Hospitalist",
+            "start": "2016-07",
+            "end": "2021-02",
+            "fte": 0.8
+          },
+          {
+            "employer": "(gap \u2014 escalate fixture)",
+            "title": "unverified",
+            "start": "2021-03",
+            "end": "2021-10",
+            "fte": 0.0
+          }
+        ],
+        "addresses": {
+          "practice": {
+            "line1": "100 Synth Ave",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90000"
+          },
+          "mailing": {
+            "line1": "PO Box 999",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90001"
+          }
+        },
+        "privileges": {
+          "active_status": "active",
+          "departments": [
+            "Medicine",
+            "Hospitalist Service"
+          ],
+          "admit_rights": true,
+          "or_privileges": false
+        },
+        "board": {
+          "specialty_board": "ABIM (synth)",
+          "certification_status": "flagged-review",
+          "expiration_year": 2028
+        },
+        "internal_notes": "Fixture-only hospital dossier. Never egresses as traveled payload.",
+        "hr_flags": {
+          "background_check_internal": "clear",
+          "peer_review_open": true
         }
       }
     },
@@ -72,6 +209,70 @@
           "evidence_ref": "fixture://hospital/leave#R",
           "notes": "Documented leave 2021-03 to 2021-10, employment continuous"
         }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider R (sources disagree, explained)",
+        "preferred_name": "Dr. SYNTH-NPI-1777777777",
+        "specialty_primary": "Internal Medicine",
+        "specialty_secondary": "Hospital Medicine",
+        "npi_local": "1777777777",
+        "dea_number_internal": "SYNTH-DEA-7777",
+        "education": {
+          "medical_school": "Synth University SOM",
+          "graduation_year": 2008,
+          "residency_program": "Synth General Hospital IM",
+          "residency_years": "2008-2011",
+          "fellowship": "none"
+        },
+        "work_history": [
+          {
+            "employer": "Synth Clinic A",
+            "title": "Staff Physician",
+            "start": "2011-07",
+            "end": "2016-06",
+            "fte": 1.0
+          },
+          {
+            "employer": "Synth Hospital B",
+            "title": "Hospitalist",
+            "start": "2016-07",
+            "end": "present",
+            "fte": 0.8
+          }
+        ],
+        "addresses": {
+          "practice": {
+            "line1": "100 Synth Ave",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90000"
+          },
+          "mailing": {
+            "line1": "PO Box 999",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90001"
+          }
+        },
+        "privileges": {
+          "active_status": "active",
+          "departments": [
+            "Medicine",
+            "Hospitalist Service"
+          ],
+          "admit_rights": true,
+          "or_privileges": false
+        },
+        "board": {
+          "specialty_board": "ABIM (synth)",
+          "certification_status": "certified",
+          "expiration_year": 2028
+        },
+        "internal_notes": "Fixture-only hospital dossier. Never egresses as traveled payload.",
+        "hr_flags": {
+          "background_check_internal": "clear",
+          "peer_review_open": false
+        }
       }
     },
     {
@@ -99,6 +300,70 @@
           "confidence": 0.6,
           "evidence_ref": null,
           "notes": "No record found for 2021-03 to 2021-10"
+        }
+      },
+      "local_record": {
+        "legal_name": "Synthetic Provider S (sources disagree, unresolved)",
+        "preferred_name": "Dr. SYNTH-NPI-1666666666",
+        "specialty_primary": "Internal Medicine",
+        "specialty_secondary": "Hospital Medicine",
+        "npi_local": "1666666666",
+        "dea_number_internal": "SYNTH-DEA-6666",
+        "education": {
+          "medical_school": "Synth University SOM",
+          "graduation_year": 2008,
+          "residency_program": "Synth General Hospital IM",
+          "residency_years": "2008-2011",
+          "fellowship": "none"
+        },
+        "work_history": [
+          {
+            "employer": "Synth Clinic A",
+            "title": "Staff Physician",
+            "start": "2011-07",
+            "end": "2016-06",
+            "fte": 1.0
+          },
+          {
+            "employer": "Synth Hospital B",
+            "title": "Hospitalist",
+            "start": "2016-07",
+            "end": "present",
+            "fte": 0.8
+          }
+        ],
+        "addresses": {
+          "practice": {
+            "line1": "100 Synth Ave",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90000"
+          },
+          "mailing": {
+            "line1": "PO Box 999",
+            "city": "Demo City",
+            "state": "CA",
+            "zip": "90001"
+          }
+        },
+        "privileges": {
+          "active_status": "active",
+          "departments": [
+            "Medicine",
+            "Hospitalist Service"
+          ],
+          "admit_rights": true,
+          "or_privileges": false
+        },
+        "board": {
+          "specialty_board": "ABIM (synth)",
+          "certification_status": "certified",
+          "expiration_year": 2028
+        },
+        "internal_notes": "Fixture-only hospital dossier. Never egresses as traveled payload.",
+        "hr_flags": {
+          "background_check_internal": "clear",
+          "peer_review_open": false
         }
       }
     }

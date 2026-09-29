@@ -22,6 +22,9 @@ from poppy_orchestrator.contracts.claims import (
     ClaimRequest,
     ClaimResponse,
 )
+from poppy_orchestrator.contracts.privacy import (
+    privacy_summary_from_local_record,
+)
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -53,6 +56,13 @@ class StubHospitalCredClient(SuperNodeClaimClient):
         with self._fixtures_path.open(encoding="utf-8") as f:
             data = json.load(f)
         return {p["provider_id"]: p for p in data["providers"]}
+
+    def _privacy_summary(self, provider: Mapping[str, Any], claim_count: int):
+        record = provider.get("local_record")
+        return privacy_summary_from_local_record(
+            record if isinstance(record, Mapping) else None,
+            traveled_claim_count=claim_count,
+        )
 
     def request_claims(self, request: ClaimRequest) -> ClaimResponse:
         bad = [t for t in request.claim_types if t not in HOSPITAL_CRED_CLAIMS]
@@ -111,6 +121,7 @@ class StubHospitalCredClient(SuperNodeClaimClient):
             ok=True,
             responded_at=time.time(),
             synthetic=True,
+            privacy_summary=self._privacy_summary(provider, len(decisions)),
         )
 
 
@@ -157,6 +168,8 @@ class StubHospitalCredClient(SuperNodeClaimClient):
                 notes=entry.get("notes", ""),
                 resolves_dispute=bool(entry.get("resolves_dispute", False)),
             )
+        # Recheck answers still attach stayed inventory from local_record.
+        provider_row = self._providers.get(request.provider.provider_id) or {}
         return ClaimResponse(
             request_id=request.request_id,
             source_node=self.node_name,
@@ -165,6 +178,7 @@ class StubHospitalCredClient(SuperNodeClaimClient):
             ok=True,
             responded_at=time.time(),
             synthetic=True,
+            privacy_summary=self._privacy_summary(provider_row, 1),
         )
 
 

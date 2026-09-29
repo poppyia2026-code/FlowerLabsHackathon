@@ -23,6 +23,9 @@ from poppy_orchestrator.contracts.claims import (
     ClaimResponse,
     claim_dispute_from_dict,
 )
+from poppy_orchestrator.contracts.privacy import (
+    privacy_summary_from_local_record,
+)
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -54,6 +57,13 @@ class StubPayerEnrollmentClient(SuperNodeClaimClient):
         with self._fixtures_path.open(encoding="utf-8") as f:
             data = json.load(f)
         return {p["provider_id"]: p for p in data["providers"]}
+
+    def _privacy_summary(self, provider: Mapping[str, Any], claim_count: int):
+        record = provider.get("local_record")
+        return privacy_summary_from_local_record(
+            record if isinstance(record, Mapping) else None,
+            traveled_claim_count=claim_count,
+        )
 
     def request_claims(self, request: ClaimRequest) -> ClaimResponse:
         bad = [t for t in request.claim_types if t not in PAYER_ENROLLMENT_CLAIMS]
@@ -113,6 +123,7 @@ class StubPayerEnrollmentClient(SuperNodeClaimClient):
                 claim_dispute_from_dict(d, raised_by=self.node_name)
                 for d in provider.get("disputes", [])
             ),
+            privacy_summary=self._privacy_summary(provider, len(decisions)),
         )
 
 

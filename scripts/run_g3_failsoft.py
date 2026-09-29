@@ -13,9 +13,66 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from poppy_orchestrator.agent_app import kickoff_credentialing, run_f0_grid_handoff
+from poppy_orchestrator.clients.hospital_cred import StubHospitalCredClient
+from poppy_orchestrator.clients.payer_enrollment import StubPayerEnrollmentClient
+from poppy_orchestrator.contracts.claims import (
+    HOSPITAL_CRED_CLAIMS,
+    PAYER_ENROLLMENT_CLAIMS,
+    ClaimBundle,
+    ClaimRequest,
+    ProviderRef,
+    new_request_id,
+)
 from poppy_orchestrator.events.emit import LocalEventBus
 from poppy_orchestrator.hitl.pause import AutoApproveHitlGate
+from poppy_orchestrator.hitl.stayed_traveled import (
+    build_stayed_traveled_view,
+    render_stayed_traveled_html,
+)
 from poppy_orchestrator.receipts.format import format_receipt_text
+
+
+
+def _write_stayed_traveled(provider_id: str) -> None:
+    """F13 screenshotable artifact for G3 fail-soft kit."""
+    provider = ProviderRef(
+        provider_id=provider_id,
+        network_id="SYNTH-NETWORK-X",
+        display_name="Synthetic Provider P (happy path)",
+    )
+    hospital = StubHospitalCredClient().request_claims(
+        ClaimRequest(
+            request_id=new_request_id("hosp"),
+            provider=provider,
+            claim_types=tuple(sorted(HOSPITAL_CRED_CLAIMS)),
+            source_node="HospitalCred",
+        )
+    )
+    payer = StubPayerEnrollmentClient().request_claims(
+        ClaimRequest(
+            request_id=new_request_id("pay"),
+            provider=provider,
+            claim_types=tuple(sorted(PAYER_ENROLLMENT_CLAIMS)),
+            source_node="PayerEnrollment",
+        )
+    )
+    bundle = ClaimBundle(
+        run_id="g3-stayed-traveled",
+        provider=provider,
+        hospital=hospital,
+        payer=payer,
+    )
+    view = build_stayed_traveled_view(bundle)
+    out_dir = ROOT / "fixtures" / "g3"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    html_path = out_dir / "stayed_vs_traveled.html"
+    json_path = out_dir / "stayed_vs_traveled.json"
+    html_path.write_text(render_stayed_traveled_html(view))
+    with json_path.open("w") as f:
+        json.dump(view.to_dict(), f, indent=2)
+        f.write("\n")
+    print(f"Wrote {html_path}", file=sys.stderr)
+    print(f"Wrote {json_path}", file=sys.stderr)
 
 
 def main() -> int:
@@ -69,6 +126,7 @@ def main() -> int:
             json.dump(summary, f, indent=2)
             f.write("\n")
         print(f"\nWrote {out}", file=sys.stderr)
+        _write_stayed_traveled(args.provider)
 
     ok = handoff.ok and result.receipt is not None
     return 0 if ok else 1

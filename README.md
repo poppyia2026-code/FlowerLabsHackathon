@@ -63,6 +63,20 @@ python -m pytest tests/test_f1_claim_fixtures.py -v
 
 SuperNode layout for Leandro: `docs/f1-fixtures.md` → `fixtures/supernodes/{HospitalCred,PayerEnrollment}/`.
 
+
+## F7 HITL claim review panel
+
+Approve / Escalate / Reject before complete. Auto-approve disabled on panel path.
+Happy-path operator decision documented under ~60s. Receipt (F8) only after Approve.
+
+```bash
+python scripts/run_f7_hitl.py --serve   # http://127.0.0.1:8765/
+python scripts/run_f7_hitl.py --cli
+python -m pytest tests/test_f7_hitl_panel.py -v
+```
+
+Details: `docs/f7-hitl.md`.
+
 ## F8 claim receipt (after Approve)
 
 ```bash

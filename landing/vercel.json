@@ -4,7 +4,7 @@
   "redirects": [
     {
       "source": "/hub",
-      "destination": "https://flower.ai/apps/poppyai/privcred-orchestrator",
+      "destination": "https://flower.ai/apps/leanlabiano/privcred-orchestrator",
       "permanent": false
     }
   ]

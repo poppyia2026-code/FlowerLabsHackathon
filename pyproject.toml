@@ -29,7 +29,7 @@ pythonpath = ["."]
 packages = ["poppy_orchestrator"]
 
 [tool.flwr.app]
-publisher = "poppyai"
+publisher = "leanlabiano"
 display-name = "PrivCred PoppyOrchestrator"
 fab-format-version = 1
 flwr-version-target = "1.39.0"

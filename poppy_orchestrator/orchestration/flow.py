@@ -235,6 +235,14 @@ def run_credentialing_flow(
         },
     )
     hitl = hitl_gate.wait_for_decision(bundle, emitter)
+    return finalize_credentialing_flow(bundle=bundle, hitl=hitl, emitter=emitter)
+
+
+def finalize_credentialing_flow(
+    *, bundle: ClaimBundle, hitl: HitlDecision, emitter: EventEmitter
+) -> FlowResult:
+    """Complete the exact reviewed bundle, including a resumed Flower Chat run."""
+    run_id = bundle.run_id
     outcome = _map_outcome(hitl, bundle)
 
     # F8: auditable receipt ONLY after HITL Approve (escalate/reject → None)

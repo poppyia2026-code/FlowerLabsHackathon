@@ -7,7 +7,7 @@ F0: agent.grid get_nodes → push_messages → pull_messages between
     Orchestrator ↔ HospitalCred / PayerEnrollment (judge-visible).
 F5: kickoff credential P for network X → HITL → receipt.
 
-Live path requires SuperGrid credentials + Leandro SuperNodes + Franco HITL.
+Live path uses two configured SuperNodes and explicit review in Flower Chat.
 Local dry-run / CLI:
   python -m poppy_orchestrator
   python scripts/run_f0_grid.py
@@ -27,7 +27,7 @@ from poppy_orchestrator.clients.grid_clients import (
     GridHospitalCredClient,
     GridPayerEnrollmentClient,
 )
-from poppy_orchestrator.events.emit import EventEmitter, flower_emitter_from_session
+from poppy_orchestrator.events.emit import EventEmitter
 from poppy_orchestrator.hitl.pause import (
     AutoApproveHitlGate,
     ConsoleHitlGate,
@@ -185,95 +185,7 @@ def run_f0_grid_handoff(
 
 @app.main()
 def main(agent: Any, context: Any) -> None:
-    """AgentApp main — invoked by Flower SuperGrid / SuperLink runtime."""
-    run_config = getattr(context, "run_config", {}) or {}
-    # Flower run_config values are often strings
-    provider_id = str(run_config.get("provider-id", "SYNTH-NPI-1999999999"))
-    network_id = str(run_config.get("network-id", "SYNTH-NETWORK-X"))
-    fixture_mode = str(run_config.get("fixture-mode", "true")).lower() in {
-        "1",
-        "true",
-        "yes",
-    }
-    auto_hitl = str(run_config.get("hitl-auto-approve-dry-run", "false")).lower() in {
-        "1",
-        "true",
-        "yes",
-    }
-    run_id = str(getattr(context, "run_id", "") or "") or None
+    """Flower runtime: real Grid requests and explicit review in Flower Chat."""
+    from poppy_orchestrator.live_runtime import run_live_agent
 
-    emitter = flower_emitter_from_session(agent)
-
-    # --- F0 Collaborative AgentApp Grid tools (≥2 roles) ---
-    # Prefer live agent.grid on SuperGrid; fall back to FakeAgentGrid in fixtures.
-    grid_enabled = str(run_config.get("grid-handoff", "true")).lower() in {
-        "1",
-        "true",
-        "yes",
-    }
-    grid_handoff: Optional[GridHandoffResult] = None
-    if grid_enabled:
-        live_grid = getattr(agent, "grid", None)
-        grid_handoff = run_f0_grid_handoff(
-            grid=live_grid,
-            provider_id=provider_id,
-            network_id=network_id,
-            emitter=emitter,
-            sample_size=2,
-            pull_timeout=float(run_config.get("grid-pull-timeout", 30) or 30),
-        )
-        if not grid_handoff.ok and live_grid is not None:
-            # Live Grid without expected roles — fail closed for score path.
-            raise RuntimeError(
-                f"F0 Grid handoff failed: {grid_handoff.error}. "
-                "Ensure HospitalCred + PayerEnrollment SuperNodes are in the federation."
-            )
-
-    # --- SuperNode clients ---
-    # TODO LEANDRO: when fixture_mode is false, swap stubs for Real* clients
-    # wired to agent.connectors / federation SuperNodes HospitalCred + PayerEnrollment.
-    if not fixture_mode:
-        raise RuntimeError(
-            "fixture-mode=false but RealHospitalCredClient / RealPayerEnrollmentClient "
-            "are not wired yet. TODO LEANDRO: implement and switch here."
-        )
-    hospital, payer = build_stub_clients()
-
-    # --- HITL gate ---
-    # TODO FRANCO: replace with CallbackHitlGate(wait_fn=...) or Flower Chat gate.
-    # F6: never skip HITL. AutoApprove is explicit dry-run only (hitl-auto-approve-dry-run=true).
-    # When false, fail closed until Franco wires the real pause — do not silently Approve.
-    if auto_hitl:
-        hitl_gate = build_hitl_gate(mode="auto")
-    else:
-        _ = ConsoleHitlGate  # retained for local agent debugging
-        raise RuntimeError(
-            "HITL gate not wired (hitl-auto-approve-dry-run=false). "
-            "F6 forbids silent auto-approve on the live path. "
-            "TODO FRANCO: wire CallbackHitlGate(wait_fn=...). "
-            "For fixture dry-runs set hitl-auto-approve-dry-run=true or use scripts/dry_run.py."
-        )
-
-    result = kickoff_credentialing(
-        provider_id=provider_id,
-        network_id=network_id,
-        run_id=run_id,
-        emitter=emitter,
-        hitl_gate=hitl_gate,
-        hospital=hospital,
-        payer=payer,
-        fixture_mode=fixture_mode,
-    )
-
-    # Persist outcome for run series
-    state = getattr(context, "state", None)
-    if state is not None and hasattr(state, "__setitem__"):
-        try:
-            state["privcred_outcome"] = result.outcome.value
-            state["privcred_run_id"] = result.run_id
-            if result.receipt:
-                state["privcred_receipt_id"] = result.receipt.receipt_id
-            if grid_handoff is not None:
-                state["privcred_grid_handoff"] = grid_handoff.to_summary()
-        except Exception:
-            pass
+    run_live_agent(agent, context)

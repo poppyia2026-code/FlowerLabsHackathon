@@ -11,6 +11,7 @@ No live CAQH / NPDB / PHI. No HITRUST / HIPAA-certified claims.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Optional
 
 from poppy_orchestrator.clients.hospital_cred import StubHospitalCredClient
@@ -92,7 +93,9 @@ def serve_claims_for_role(
     raise ValueError(f"unknown SuperNode role: {role}")
 
 
-def handle_inbound_message(role: str, payload: str | dict[str, Any]) -> str:
+def handle_inbound_message(
+    role: str, payload: str | dict[str, Any], *, fixtures_path: Path | None = None
+) -> str:
     """Parse Orchestrator Grid payload → ClaimResponse JSON string.
 
     Accepts either a claim-request envelope from F0 handoff or a bare
@@ -120,6 +123,10 @@ def handle_inbound_message(role: str, payload: str | dict[str, Any]) -> str:
             provider_id=provider_id,
             network_id=network_id,
             claim_types=claim_types,
+            hospital=(StubHospitalCredClient(fixtures_path)
+                      if fixtures_path is not None and role == ROLE_HOSPITAL_CRED else None),
+            payer=(StubPayerEnrollmentClient(fixtures_path)
+                   if fixtures_path is not None and role == ROLE_PAYER_ENROLLMENT else None),
         )
     except ValueError as exc:
         return json.dumps(
@@ -132,6 +139,8 @@ def handle_inbound_message(role: str, payload: str | dict[str, Any]) -> str:
             separators=(",", ":"),
         )
     out = resp.to_dict()
+    if data.get("request_id"):
+        out["request_id"] = str(data["request_id"])
     out["synthetic"] = True
     out.setdefault("role", role)
     return json.dumps(out, separators=(",", ":"))

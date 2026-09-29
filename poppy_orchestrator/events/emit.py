@@ -38,18 +38,17 @@ class NullEmitter:
 
 
 def flower_emitter_from_session(agent: Any) -> EventEmitter:
-    """Adapt AgentSession.events to EventEmitter protocol.
-
-    # TODO LEANDRO: confirm agent.events.emit accepts our PrivCred event envelopes
-    # when wiring live SuperGrid. Flower Chat consumes published events.
-    """
+    """Publish Flower 1.39 events and render human-readable messages in Chat."""
     events = getattr(agent, "events", None)
     if events is None:
         return NullEmitter()
 
     class _Adapter:
         def emit(self, event: dict[str, Any]) -> None:
-            events.emit(event)
+            events.emit({**event, "type": event["event"]})
+            if event["event"] == "privcred.message":
+                events.emit({"type": "response.output_text.delta",
+                             "delta": event["data"]["text"] + "\n\n"})
 
     return _Adapter()
 

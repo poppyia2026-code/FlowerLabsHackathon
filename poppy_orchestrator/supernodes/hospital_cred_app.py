@@ -60,47 +60,10 @@ def serve_payload(payload: str | dict[str, Any]) -> str:
 
 @app.main()
 def main(agent: Any, context: Any) -> None:
-    """AgentApp main — SuperNode HospitalCred on SuperGrid / SuperLink.
+    """Serve this role from a configured local shard and reply via Flower."""
+    from poppy_orchestrator.supernodes.runtime import serve_runtime_instruction
 
-    When live Grid messages arrive, reply with fixture claims.
-    Scaffold: if no inbound message in run_config, emit a ready heartbeat
-    with happy-path Provider P claims for judge-visible logs.
-    """
-    run_config = getattr(context, "run_config", {}) or {}
-    provider_id = str(run_config.get("provider-id", "SYNTH-NPI-1999999999"))
-    network_id = str(run_config.get("network-id", "SYNTH-NETWORK-X"))
-    inbound = run_config.get("inbound-payload")
-
-    if inbound:
-        reply = serve_payload(str(inbound))
-    else:
-        resp = serve_claims_for_role(
-            ROLE, provider_id=provider_id, network_id=network_id
-        )
-        reply = json.dumps(resp.to_dict(), separators=(",", ":"))
-
-    # Best-effort: push reply via Grid if available (live SuperNode path).
-    grid = getattr(agent, "grid", None)
-    if grid is not None and hasattr(grid, "call"):
-        try:
-            grid.call(
-                {
-                    "name": "push_reply_message",
-                    "call_id": "hospital-cred-reply",
-                    "arguments": {"payload": reply},
-                }
-            )
-        except Exception:
-            pass
-
-    state = getattr(context, "state", None)
-    if state is not None and hasattr(state, "__setitem__"):
-        try:
-            state["privcred_role"] = ROLE
-            state["privcred_claim_reply"] = reply
-            state["privcred_synthetic"] = True
-        except Exception:
-            pass
+    serve_runtime_instruction(agent, context, ROLE)
 
 
 def _cli() -> int:

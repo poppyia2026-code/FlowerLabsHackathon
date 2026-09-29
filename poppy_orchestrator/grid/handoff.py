@@ -51,6 +51,7 @@ class GridHandoffResult:
     nodes_sampled: list[dict[str, Any]] = field(default_factory=list)
     push_results: list[dict[str, Any]] = field(default_factory=list)
     replies: list[dict[str, Any]] = field(default_factory=list)
+    replies_by_role: dict[str, dict[str, Any]] = field(default_factory=dict)
     missing_roles: list[str] = field(default_factory=list)
     tool_events: list[dict[str, Any]] = field(default_factory=list)
     error: Optional[str] = None
@@ -97,6 +98,44 @@ def _grid_call(
 def _match_role(node: dict[str, Any], role: str) -> bool:
     name = (node.get("name") or "").strip()
     return name.lower() == role.lower() or role.lower() in name.lower()
+
+
+def assign_roles(
+    nodes: list[dict[str, Any]], roles: tuple[str, ...]
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Map each role to a distinct node.
+
+    SuperNode names come from ``flwr supernode register --name`` and may be
+    null, so a name match is a preference, not a requirement: roles without a
+    named node take the remaining nodes in stable id order. The role travels
+    in the message payload (``to``), which is what the receiving node acts on.
+    """
+    assigned: dict[str, dict[str, Any]] = {}
+    used: set[str] = set()
+    for role in roles:
+        match = next(
+            (
+                n
+                for n in nodes
+                if str(n.get("id")) not in used and _match_role(n, role)
+            ),
+            None,
+        )
+        if match is not None:
+            assigned[role] = match
+            used.add(str(match.get("id")))
+    spare = sorted(
+        (n for n in nodes if str(n.get("id")) not in used),
+        key=lambda n: str(n.get("id")),
+    )
+    for role in roles:
+        if role in assigned or not spare:
+            continue
+        node = spare.pop(0)
+        assigned[role] = node
+        used.add(str(node.get("id")))
+    missing = [role for role in roles if role not in assigned]
+    return assigned, missing
 
 
 def run_grid_role_handoff(
@@ -168,34 +207,17 @@ def run_grid_role_handoff(
         },
     )
 
-    role_to_node: dict[str, dict[str, Any]] = {}
-    missing: list[str] = []
-    for role in roles:
-        match = next((n for n in sampled if _match_role(n, role)), None)
-        if match is None:
-            # Fallback: search is only within sample; mark missing.
-            missing.append(role)
-        else:
-            role_to_node[role] = match
-
-    if missing:
-        # Retry get_nodes with full set (sample_size=null) once if sample missed roles.
-        if sample_size is not None:
-            full = _grid_call(
-                grid,
-                "get_nodes",
-                {"sample_size": None},
-                tool_events=tool_events,
-            )
-            sampled = list(full.get("nodes") or [])
-            role_to_node = {}
-            missing = []
-            for role in roles:
-                match = next((n for n in sampled if _match_role(n, role)), None)
-                if match is None:
-                    missing.append(role)
-                else:
-                    role_to_node[role] = match
+    role_to_node, missing = assign_roles(sampled, roles)
+    if missing and sample_size is not None:
+        # The sample was too small to cover every role: ask for all nodes once.
+        full = _grid_call(
+            grid,
+            "get_nodes",
+            {"sample_size": None},
+            tool_events=tool_events,
+        )
+        sampled = list(full.get("nodes") or [])
+        role_to_node, missing = assign_roles(sampled, roles)
 
     if len(role_to_node) < 2:
         err = (
@@ -263,6 +285,12 @@ def run_grid_role_handoff(
     message_ids = [
         r["message_id"] for r in push_results if r.get("message_id")
     ]
+    # push_messages returns one result per input message, in order.
+    role_by_message_id = {
+        str(result["message_id"]): role
+        for role, result in zip(role_to_node, push_results)
+        if result.get("message_id")
+    }
     replies: list[dict[str, Any]] = []
     if message_ids:
         pull_out = _grid_call(
@@ -291,7 +319,17 @@ def run_grid_role_handoff(
             },
         )
 
-    ok = len(replies) >= 2 and not missing
+    replies_by_role: dict[str, dict[str, Any]] = {}
+    for reply in replies:
+        role = role_by_message_id.get(str(reply.get("reply_to_message_id")))
+        if role is not None:
+            replies_by_role[role] = reply
+    answered = {
+        role
+        for role, reply in replies_by_role.items()
+        if reply.get("payload") is not None and not reply.get("error")
+    }
+    ok = not missing and all(role in answered for role in role_to_node)
     emit_stage(
         bus,
         "grid.handoff.complete",
@@ -326,6 +364,7 @@ def run_grid_role_handoff(
         nodes_sampled=sampled,
         push_results=push_results,
         replies=replies,
+        replies_by_role=replies_by_role,
         missing_roles=missing,
         tool_events=tool_events,
         error=None if ok else "incomplete Grid replies or missing roles",
@@ -339,5 +378,6 @@ __all__ = [
     "ROLE_HOSPITAL_CRED",
     "ROLE_ORCHESTRATOR",
     "ROLE_PAYER_ENROLLMENT",
+    "assign_roles",
     "run_grid_role_handoff",
 ]

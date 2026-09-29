@@ -27,12 +27,12 @@ from poppy_orchestrator.contracts.claims import (
     HitlAction,
     HitlDecision,
     ProviderRef,
-    new_receipt_id,
     new_request_id,
     validate_claim_response,
 )
 from poppy_orchestrator.events.emit import EventEmitter, emit_stage, emit_text
 from poppy_orchestrator.hitl.pause import HitlGate
+from poppy_orchestrator.receipts.emit import emit_receipt_after_approve
 
 # Ordered stages judges / Flower Chat can follow (F5 run-series).
 FLOW_STAGES: tuple[str, ...] = (
@@ -222,28 +222,15 @@ def run_credentialing_flow(
     hitl = hitl_gate.wait_for_decision(bundle, emitter)
     outcome = _map_outcome(hitl, bundle)
 
-    receipt: Optional[ClaimReceipt] = None
-    if hitl.action == HitlAction.APPROVE:
-        receipt = ClaimReceipt(
-            receipt_id=new_receipt_id(),
-            run_id=run_id,
-            provider=provider,
-            outcome=outcome,
-            hitl=hitl,
-            claims_snapshot=[c.to_dict() for c in bundle.all_claims()],
-            message=(
-                "Verification completed under human supervision. "
-                "Synthetic demo — not a production credentialing decision."
-            ),
-        )
-        # TODO FRANCO (F8): enrich receipt presentation in UI / Flower Chat
-        emit_stage(emitter, "claim_receipt", receipt.to_dict())
-        emitter.emit({"event": "privcred.claim_receipt", "data": receipt.to_dict()})
-        emit_text(emitter, f"Claim receipt {receipt.receipt_id}: {receipt.message}")
-    elif hitl.action == HitlAction.ESCALATE:
-        emit_text(emitter, "Escalated — request more / human follow-up (no receipt).")
-    else:
-        emit_text(emitter, "Rejected by human — no credentialed status.")
+    # F8: auditable receipt ONLY after HITL Approve (escalate/reject → None)
+    receipt = emit_receipt_after_approve(
+        run_id=run_id,
+        bundle=bundle,
+        hitl=hitl,
+        outcome=outcome,
+        emitter=emitter,
+        run_series=FLOW_STAGES,
+    )
 
     emit_stage(
         emitter,

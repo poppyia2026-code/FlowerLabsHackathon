@@ -16,7 +16,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = [
+  "pytest>=8.0",
+  "jsonschema>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.hatch.build.targets.wheel]
 packages = ["poppy_orchestrator"]
@@ -42,7 +49,7 @@ agentapp = "poppy_orchestrator.agent_app:app"
 provider-id = "SYNTH-NPI-1999999999"
 network-id = "SYNTH-NETWORK-X"
 fixture-mode = "true"
-hitl-auto-approve-dry-run = "false"
+hitl-auto-approve-dry-run = "true"  # explicit dry-run AutoApprove; set false once Franco wires CallbackHitlGate
 
 [tool.flwr.app.config.agent]
 input = "Credential synthetic provider SYNTH-NPI-1999999999 for network SYNTH-NETWORK-X"

@@ -86,13 +86,18 @@ def main(agent: Any, context: Any) -> None:
 
     # --- HITL gate ---
     # TODO FRANCO: replace with CallbackHitlGate(wait_fn=...) or Flower Chat gate.
-    # On SuperGrid without Franco UI yet, AutoApprove keeps the run non-blocking.
-    # Prefer CallbackHitlGate once Franco wires the panel (required for live demo).
+    # F6: never skip HITL. AutoApprove is explicit dry-run only (hitl-auto-approve-dry-run=true).
+    # When false, fail closed until Franco wires the real pause — do not silently Approve.
     if auto_hitl:
         hitl_gate = AutoApproveHitlGate()
     else:
-        hitl_gate = AutoApproveHitlGate()
         _ = ConsoleHitlGate  # retained for local agent debugging
+        raise RuntimeError(
+            "HITL gate not wired (hitl-auto-approve-dry-run=false). "
+            "F6 forbids silent auto-approve on the live path. "
+            "TODO FRANCO: wire CallbackHitlGate(wait_fn=...). "
+            "For fixture dry-runs set hitl-auto-approve-dry-run=true or use scripts/dry_run.py."
+        )
 
     config = OrchestratorConfig(
         provider_id=provider_id,

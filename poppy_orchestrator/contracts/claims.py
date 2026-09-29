@@ -131,6 +131,10 @@ class ClaimResponse:
     responded_at: float = field(default_factory=lambda: time.time())
     synthetic: bool = True
 
+    def __post_init__(self) -> None:
+        if not self.synthetic:
+            raise ValueError("MVP allows synthetic=True only (no live CAQH/NPDB)")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "request_id": self.request_id,
@@ -256,6 +260,8 @@ def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
         )
         for c in data.get("claims", [])
     )
+    if "synthetic" not in data:
+        raise ValueError("claim response missing required field: synthetic")
     return ClaimResponse(
         request_id=str(data["request_id"]),
         source_node=str(data["source_node"]),
@@ -264,7 +270,7 @@ def claim_response_from_dict(data: Mapping[str, Any]) -> ClaimResponse:
         ok=bool(data.get("ok", True)),
         error=data.get("error"),
         responded_at=float(data.get("responded_at", time.time())),
-        synthetic=bool(data.get("synthetic", True)),
+        synthetic=bool(data["synthetic"]),
     )
 
 

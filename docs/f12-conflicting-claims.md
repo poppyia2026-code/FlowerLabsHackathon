@@ -39,6 +39,11 @@ A person then decides with both answers in front of them.
 Round 2 sends the hospital only what the payer objected to, never the
 payer's records.
 
+Round 1 dispatches both requests together, then waits once for their replies.
+The follow-up still waits for both first-round answers before asking the owner.
+This reduces the normal Grid tool calls from six to three, and the conflict
+path from nine to six. It does not combine either institution's private data.
+
 ## Time
 
 The conflict path sends three messages instead of two. Every wait in a run
@@ -81,7 +86,7 @@ fails closed.
   local TLS SuperLink and two authenticated SuperNodes (Flower 1.39.0,
   Windows 11). Decisions in that script are automated, not typed by a person.
 
-Measured in that run, one laptop, nodes already online:
+Historical measurements before batching, one laptop, nodes already online:
 
 | Run | Grid tool calls | Time |
 | --- | --- | --- |

@@ -13,6 +13,7 @@ from typing import Any
 
 from poppy_orchestrator.clients.grid_clients import (
     GridHospitalCredClient, GridPayerEnrollmentClient, PullBudget,
+    fetch_claim_responses_via_grid,
 )
 from poppy_orchestrator.contracts.claims import (
     ClaimBundle, ClaimConflict, HitlAction, HitlDecision, ProviderRef,
@@ -169,6 +170,9 @@ def run_live_agent(agent: Any, context: Any) -> None:
         run_credentialing_flow(
             hospital=GridHospitalCredClient(grid, pull_timeout=timeout),
             payer=GridPayerEnrollmentClient(grid, pull_timeout=timeout),
+            collect_claims=lambda requests: fetch_claim_responses_via_grid(
+                grid, requests, pull_timeout=timeout,
+            ),
             hitl_gate=FlowerChatReviewGate(),
             emitter=flower_emitter_from_session(agent),
             config=OrchestratorConfig(provider_id=provider_id, network_id=network_id,

@@ -152,6 +152,7 @@ def main() -> None:
     processes = []
     logs = []
     client = None
+    timings = []
 
     def launch(name: str, executable: str, args: list[str], node_home: Path,
                extra_env: dict[str, str] | None = None):
@@ -166,6 +167,7 @@ def main() -> None:
         return proc
 
     def turn(prompt: str, series=None):
+        turn_started = time.monotonic()
         run, series = start_chat_run(client, prompt, None, series,
                                      fab_hash=hashlib.sha256(fab).hexdigest(), fab_content=fab)
         events = [dict(kind=kind, payload=payload)
@@ -173,7 +175,9 @@ def main() -> None:
                   for kind, payload in [parse_task_event(response.task_event)]]
         (folder / f"run-{run}.json").write_text(json.dumps(events, indent=2))
         assert any(e["kind"] == "response.completed" for e in events), f"Run failed: {run}"
-        print(f"Completed run {run}: {prompt}", flush=True)
+        elapsed = round(time.monotonic() - turn_started, 3)
+        timings.append({"run_id": str(run), "prompt": prompt, "seconds": elapsed})
+        print(f"Completed run {run} in {elapsed}s: {prompt}", flush=True)
         return run, series, events
 
     def receipt_events(events):
@@ -317,6 +321,7 @@ def main() -> None:
         evidence = {"runtime": "local Flower 1.39, TLS, authenticated SuperNodes",
                     "synthetic": True, "automated_test_decisions": True,
                     "supergrid_verified": False, "startup_seconds": startup_seconds,
+                    "turn_timings": timings,
                     "checks": ["real node replies", "six claims", "no data in FAB", "pending review",
                                "persistent state", "wrong ID", "approve", "replay", "escalate", "reject",
                                "conflict explained then approved",

@@ -7,6 +7,11 @@ A local unit-test result is **not** evidence of a live SuperGrid deployment.
 
 - The coordinator consumes the two SuperNodes' replies instead of re-reading
   local fixture files after a cosmetic Grid handoff.
+- The first round discovers both nodes once and dispatches both requests in
+  one Grid push, before waiting for either reply. Replies are matched by their
+  original message IDs and source nodes, never by arrival order. Each node
+  receives only its own claim request. A missing or invalid reply stays missing;
+  any valid peer response remains available for review.
 - Pending, malformed, misidentified, or missing replies fail closed. There is
   no fallback that manufactures a successful reply from a local fixture.
 - Flower runs the same FAB on the coordinator and the workers. Each worker

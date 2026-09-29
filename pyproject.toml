@@ -55,7 +55,10 @@ grid-wait-budget = "240"  # all Grid waits in one run; SuperGrid stops a task at
 review-max-age-seconds = 600
 endeavor-optional = "true"  # F11 bonus — dry-run without FLWR_RUNTIME_* / ENDEAVOR_API_KEY
 endeavor-role = "PoppyOrchestrator"
-endeavor-model-id = "flower/endeavor"  # confirm day-of in Slack if mentors publish different id
+# Model the Orchestrator asks for its brief. "flower/endeavor" is a guess:
+# confirm the exact id in Slack. Override per run with
+#   --run-config 'endeavor-model-id="<id>"'
+endeavor-model-id = "flower/endeavor"
 
 [tool.flwr.app.config.agent]
 input = "Credential synthetic provider SYNTH-NPI-1999999999 for network SYNTH-NETWORK-X"

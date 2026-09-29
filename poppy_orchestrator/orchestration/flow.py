@@ -1,6 +1,7 @@
 """PoppyOrchestrator credentialing flow (F5).
 
-Kickoff → HospitalCred claims → PayerEnrollment claims → HITL → receipt.
+Kickoff credential P for network X → HospitalCred claims → PayerEnrollment
+claims → HITL pause → claim receipt.
 
 Failure if a node is missing: flow still reaches HITL (never silent skip)
 but outcome cannot be credentialed without Approve + both nodes ok.
@@ -9,7 +10,9 @@ but outcome cannot be credentialed without Approve + both nodes ok.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
+import json
 import uuid
 
 from poppy_orchestrator.clients.base import SuperNodeClaimClient
@@ -31,13 +34,54 @@ from poppy_orchestrator.contracts.claims import (
 from poppy_orchestrator.events.emit import EventEmitter, emit_stage, emit_text
 from poppy_orchestrator.hitl.pause import HitlGate
 
+# Ordered stages judges / Flower Chat can follow (F5 run-series).
+FLOW_STAGES: tuple[str, ...] = (
+    "kickoff",
+    "claim_request.HospitalCred",
+    "claim_response.HospitalCred",
+    "claim_request.PayerEnrollment",
+    "claim_response.PayerEnrollment",
+    "claims_aggregated",
+    "hitl_pause",
+    "claim_receipt",
+    "complete",
+)
+
+_FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "providers.json"
+
+
+def resolve_provider_display_name(
+    provider_id: str,
+    *,
+    fallback: str = "Synthetic Provider P",
+    fixtures_path: Optional[Path] = None,
+) -> str:
+    """Look up display_name from synthetic fixtures (no live directory)."""
+    path = fixtures_path or _FIXTURES
+    try:
+        with path.open() as f:
+            data = json.load(f)
+        for row in data.get("providers", []):
+            if row.get("provider_id") == provider_id:
+                return str(row.get("display_name") or fallback)
+    except (OSError, json.JSONDecodeError, TypeError):
+        pass
+    return fallback
+
 
 @dataclass
 class OrchestratorConfig:
+    """Kickoff knobs: credential provider P for network X (synthetic)."""
+
     provider_id: str = "SYNTH-NPI-1999999999"
     network_id: str = "SYNTH-NETWORK-X"
-    display_name: str = "Synthetic Provider P"
+    display_name: str = ""
     run_id: Optional[str] = None
+
+    def resolved_display_name(self) -> str:
+        if self.display_name.strip():
+            return self.display_name
+        return resolve_provider_display_name(self.provider_id)
 
 
 @dataclass
@@ -48,6 +92,23 @@ class FlowResult:
     receipt: Optional[ClaimReceipt]
     outcome: CredentialingOutcome
 
+    def to_summary(self) -> dict[str, Any]:
+        """CLI / script JSON summary for F5 / F9 dry-run."""
+        return {
+            "run_id": self.run_id,
+            "outcome": self.outcome.value,
+            "provider_id": self.bundle.provider.provider_id,
+            "network_id": self.bundle.provider.network_id,
+            "display_name": self.bundle.provider.display_name,
+            "missing_nodes": self.bundle.missing_nodes(),
+            "claims": [c.to_dict() for c in self.bundle.all_claims()],
+            "hitl": self.hitl.to_dict() if self.hitl else None,
+            "receipt": self.receipt.to_dict() if self.receipt else None,
+            "hitl_pause_reached": self.hitl is not None,
+            "stages": list(FLOW_STAGES),
+            "synthetic": True,
+        }
+
 
 def run_credentialing_flow(
     *,
@@ -57,17 +118,27 @@ def run_credentialing_flow(
     emitter: EventEmitter,
     config: OrchestratorConfig,
 ) -> FlowResult:
+    """F5 path: kickoff → both SuperNode claims → HITL → receipt."""
     run_id = config.run_id or f"run-{uuid.uuid4().hex[:12]}"
     provider = ProviderRef(
         provider_id=config.provider_id,
         network_id=config.network_id,
-        display_name=config.display_name,
+        display_name=config.resolved_display_name(),
     )
 
-    emit_stage(emitter, "kickoff", provider.to_dict())
+    emit_stage(
+        emitter,
+        "kickoff",
+        {
+            "provider": provider.to_dict(),
+            "intent": "credential_provider_for_network",
+            "nodes": ["HospitalCred", "PayerEnrollment"],
+            "synthetic": True,
+        },
+    )
     emit_text(
         emitter,
-        f"PrivCred PoppyOrchestrator: credential {provider.display_name} "
+        f"PrivCred PoppyOrchestrator kickoff: credential {provider.display_name} "
         f"({provider.provider_id}) for network {provider.network_id} "
         "[synthetic fixtures only — no live CAQH/NPDB].",
     )
@@ -139,6 +210,15 @@ def run_credentialing_flow(
     emit_stage(emitter, "claims_aggregated", bundle.to_dict())
 
     # --- HITL (mandatory — never silent skip) ---
+    emit_stage(
+        emitter,
+        "hitl_pause",
+        {
+            "provider_id": provider.provider_id,
+            "claim_count": len(bundle.all_claims()),
+            "missing_nodes": bundle.missing_nodes(),
+        },
+    )
     hitl = hitl_gate.wait_for_decision(bundle, emitter)
     outcome = _map_outcome(hitl, bundle)
 
@@ -157,6 +237,7 @@ def run_credentialing_flow(
             ),
         )
         # TODO FRANCO (F8): enrich receipt presentation in UI / Flower Chat
+        emit_stage(emitter, "claim_receipt", receipt.to_dict())
         emitter.emit({"event": "privcred.claim_receipt", "data": receipt.to_dict()})
         emit_text(emitter, f"Claim receipt {receipt.receipt_id}: {receipt.message}")
     elif hitl.action == HitlAction.ESCALATE:

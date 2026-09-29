@@ -18,7 +18,9 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import _thread
 from datetime import datetime, timedelta, timezone
 from ipaddress import ip_address
 from urllib.error import URLError
@@ -38,6 +40,16 @@ from flwr.supercore.primitives.asymmetric import public_key_to_bytes
 
 ROOT = Path(__file__).resolve().parents[1]
 ROLES = ("HospitalCred", "PayerEnrollment")
+DEADLINE_SECONDS = 300
+ON_WINDOWS = os.name == "nt"
+
+
+def stop(proc: subprocess.Popen, *, force: bool = False) -> None:
+    """Stop one Flower process; Windows has no process groups to signal."""
+    if ON_WINDOWS:
+        proc.kill() if force else proc.terminate()
+    else:
+        os.killpg(proc.pid, signal.SIGKILL if force else signal.SIGINT)
 
 
 def make_certificates(folder: Path) -> None:
@@ -100,7 +112,8 @@ def main() -> None:
         logs.append(log)
         proc = subprocess.Popen([str(Path(sys.executable).parent / executable), *args],
                                 cwd=ROOT, env={**env, "FLWR_HOME": str(node_home)},
-                                stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                                stdout=log, stderr=subprocess.STDOUT,
+                                start_new_session=not ON_WINDOWS)
         processes.append(proc)
         return proc
 
@@ -123,10 +136,17 @@ def main() -> None:
                     if e["kind"] == "privcred.stage" and e["payload"]["data"]["stage"] == name)
 
     def deadline(_signum, _frame):
-        raise TimeoutError(f"Smoke test exceeded 180 seconds; inspect {folder}")
+        raise TimeoutError(f"Smoke test exceeded {DEADLINE_SECONDS} seconds; inspect {folder}")
 
-    signal.signal(signal.SIGALRM, deadline)
-    signal.alarm(180)
+    watchdog = None
+    if ON_WINDOWS:
+        # No SIGALRM here: interrupt the main thread so cleanup still runs.
+        watchdog = threading.Timer(DEADLINE_SECONDS, _thread.interrupt_main)
+        watchdog.daemon = True
+        watchdog.start()
+    else:
+        signal.signal(signal.SIGALRM, deadline)
+        signal.alarm(DEADLINE_SECONDS)
     started = time.monotonic()
     print(f"Real local Flower smoke; logs: {folder}", flush=True)
     try:
@@ -204,9 +224,27 @@ def main() -> None:
             _, _, decided = turn(f"/{action} run-{run} automated synthetic smoke test", series)
             assert not receipt_events(decided)
             assert stage(decided, "complete")["outcome"] == outcome
+        # Sources disagree; the hospital's second answer accounts for the gap.
+        run, series, events = turn("Verify SYNTH-NPI-1777777777 for SYNTH-NETWORK-X")
+        conflicts = stage(events, "claims_aggregated")["conflicts"]
+        assert [c["status"] for c in conflicts] == ["explained"]
+        assert stage(events, "claim_recheck_response.HospitalCred")["ok"]
+        _, _, approved = turn(f"/approve run-{run} automated synthetic smoke test", series)
+        receipts = receipt_events(approved)
+        assert len(receipts) == 1 and receipts[0]["outcome"] == "credentialed"
+        assert "Dispute on work_history_complete" in receipts[0]["message"]
+        # Sources disagree and stay that way: approval applies nothing.
+        run, series, events = turn("Verify SYNTH-NPI-1666666666 for SYNTH-NETWORK-X")
+        conflicts = stage(events, "claims_aggregated")["conflicts"]
+        assert [c["status"] for c in conflicts] == ["unresolved"]
+        _, _, refused = turn(f"/approve run-{run} automated synthetic smoke test", series)
+        assert not receipt_events(refused), "Unresolved conflict was approved"
+        _, _, decided = turn(f"/escalate run-{run} automated synthetic smoke test", series)
+        assert not receipt_events(decided)
+        assert stage(decided, "complete")["outcome"] == "escalated"
         # Simulate an institution going offline in this isolated test only.
         payer_process = processes[-1]
-        os.killpg(payer_process.pid, signal.SIGINT)
+        stop(payer_process)
         payer_process.wait(timeout=10)
         run, series, events = turn("Verify SYNTH-NPI-1999999999 for SYNTH-NETWORK-X")
         assert "PayerEnrollment" in stage(events, "claims_aggregated")["missing_nodes"]
@@ -218,20 +256,25 @@ def main() -> None:
                     "supergrid_verified": False, "startup_seconds": startup_seconds,
                     "checks": ["real node replies", "six claims", "no data in FAB", "pending review",
                                "persistent state", "wrong ID", "approve", "replay", "escalate", "reject",
+                               "conflict explained then approved",
+                               "unresolved conflict cannot be approved",
                                "offline node cannot credential"]}
         (folder / "result.json").write_text(json.dumps(evidence, indent=2))
         print("PASS: " + ", ".join(evidence["checks"]), flush=True)
     finally:
-        signal.alarm(0)
+        if watchdog is not None:
+            watchdog.cancel()
+        else:
+            signal.alarm(0)
         if client:
             client.close()
         for proc in reversed(processes):
             if proc.poll() is None:
-                os.killpg(proc.pid, signal.SIGINT)
+                stop(proc)
                 try:
                     proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    os.killpg(proc.pid, signal.SIGKILL)
+                    stop(proc, force=True)
                     proc.wait()
         for log in logs:
             log.close()

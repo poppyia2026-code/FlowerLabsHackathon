@@ -1,5 +1,5 @@
 # RushPoppy sequential eng loop queue
-Status · 2026-09-29 ~13:11 PT
+Status · 2026-09-29 ~13:30 PT
 
 ## Merged
 - PR #1 F6 (FLOWER-8) Done
@@ -14,21 +14,22 @@ Status · 2026-09-29 ~13:11 PT
 - PR #10 H3/H5 + H4 backlog notes (FLOWER-24/21/22/25/27/26/28/29) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/10
 - PR #11 queue status flip after #10 **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/11
 - PR #13 F15 role-aware AgentApp (FLOWER-31) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/13 — Franco patch; local FakeAgentGrid green; live SuperGrid still needs Leandro FLOWER-10
+- PR #16 F14 Flower Chat HITL two-run (FLOWER-32) **Merged** — https://github.com/poppyia2026-code/FlowerLabsHackathon/pull/16 — supersedes #12; Linux pytest 106 + `smoke_local_flower.py` PASS; live SuperGrid human `/approve` still FLOWER-10
 
 ## Also Done (separate landing)
 - FLOWER-15 E1 landing — https://privcred-landing.vercel.app (verified ~12:30 PT; hero + Hub shell + banned-phrase QA)
 
 ## Pointer
-**13:04–13:30 PT fire:** FLOWER-31 / F15 role-aware AgentApp merged **PR #13** (`4c16f62`). pytest **92 passed**. Live SuperGrid verify blocked on Leandro / FLOWER-10 — do not fake success.
-**Next CoS candidates:** F32 (F14 chat-HITL — draft PR #12 Martin) · F33 (F12 conflicting claims) · F35.
-**Human-gated remaining:** FLOWER-5 Hub+Typeform → FLOWER-10 live ≥2 SuperNodes (Leandro) → FLOWER-20 G2 dress rehearsal (Leandro+Franco).
-**main @** `4c16f62`+
+**13:27–13:30 PT fire:** FLOWER-32 / F14 Chat HITL merged **PR #16** (`00645bb`). pytest **106 passed**. Local Flower smoke **PASS** (TLS SuperLink + 2 SuperNodes). Live SuperGrid human verify blocked on Leandro / FLOWER-10 — do not fake success.
+**Next CoS candidates:** FLOWER-33 (F12 conflicting claims) · FLOWER-35 (G1b runbook) · FLOWER-34 (F13 stayed vs traveled).
+**Human-gated remaining:** FLOWER-10 live ≥2 SuperNodes (Leandro) → FLOWER-20 G2 dress rehearsal (Leandro+Franco) → FLOWER-36 Nebius/Endeavor (Martin).
+**main @** `00645bb`+
 
 ## Sequence remaining
-1. FLOWER-32 F14 HITL in Flower Chat (two-run) — candidate; Martin draft PR #12 related
-2. FLOWER-33 F12 conflicting-claims re-ask + escalate — candidate
-3. FLOWER-35 (if opened) — candidate
-4. FLOWER-5 F10 Hub+GitHub+Typeform — **needs human** — **do not Done**
+1. FLOWER-33 F12 conflicting-claims re-ask + escalate — **next**
+2. FLOWER-35 G1b runbook problem-first with conflict beat — candidate (docs)
+3. FLOWER-34 F13 stayed vs traveled view — candidate
+4. FLOWER-36 F16 Nebius SuperNode + Endeavor id — **needs human / Martin**
 5. FLOWER-10 F4 live ≥2 SuperNodes (Leandro) — **do not Done**
 6. FLOWER-20 G2 rehearsal (Leandro + Franco) — **do not Done**
 7. FLOWER-30 eng loop meta — stays **In Progress**

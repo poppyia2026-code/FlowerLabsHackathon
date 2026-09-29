@@ -8,6 +8,7 @@ from typing import Any
 
 from poppy_orchestrator.grid.roles import PRIVCRED_GRID_ROLES
 from poppy_orchestrator.supernodes.claim_service import handle_inbound_message
+from poppy_orchestrator.supernodes.wording import word_reply
 
 
 def serve_runtime_instruction(agent: Any, context: Any, role: str | None = None) -> None:
@@ -42,6 +43,17 @@ def serve_runtime_instruction(agent: Any, context: Any, role: str | None = None)
         raise ValueError("Explicit claim_types are required")
 
     reply = handle_inbound_message(local_role, data, fixtures_path=Path(data_path))
+    model_id = node_config.get("poppy-model")
+    if isinstance(model_id, str) and model_id:
+        reply = json.dumps(
+            word_reply(
+                json.loads(reply),
+                model_id=model_id,
+                role=local_role,
+                is_recheck=isinstance(data.get("recheck"), dict),
+            ),
+            separators=(",", ":"),
+        )
     result = agent.grid.call({
         "name": "push_reply_message",
         "call_id": f"reply-{data['request_id']}",

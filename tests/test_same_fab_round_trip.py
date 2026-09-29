@@ -56,7 +56,12 @@ class ToolGrid:
 
 
 class Federation:
-    def __init__(self, offline: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self,
+        offline: tuple[str, ...] = (),
+        models: Optional[dict[str, str]] = None,
+    ) -> None:
+        self.models = models or {}
         self.nodes = [
             {"id": str(11 + index), "name": role, "location": None}
             for index, role in enumerate(ROLES)
@@ -89,11 +94,10 @@ class Federation:
             grid=NodeGrid(self, node["id"], message_id),
             events=StrictEvents(),
         )
-        context = SimpleNamespace(
-            node_config={"poppy-role": role, "poppy-data": str(data)},
-            state={},
-            run_config={},
-        )
+        node_config = {"poppy-role": role, "poppy-data": str(data)}
+        if role in self.models:
+            node_config["poppy-model"] = self.models[role]
+        context = SimpleNamespace(node_config=node_config, state={}, run_config={})
         main(agent, context)
 
 

@@ -22,6 +22,7 @@ import threading
 import time
 import _thread
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -42,6 +43,51 @@ ROOT = Path(__file__).resolve().parents[1]
 ROLES = ("HospitalCred", "PayerEnrollment")
 DEADLINE_SECONDS = 300
 ON_WINDOWS = os.name == "nt"
+MODEL_ROLE = "HospitalCred"  # the one node that gets its own model provider
+NODE_MODEL = "smoke/local-stand-in"
+
+
+class StandInProvider(ThreadingHTTPServer):
+    """A local stand-in for one organization's model provider.
+
+    Lets the smoke run check that a SuperNode's model calls go to the provider
+    configured on that node, without any real key or outside service.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(("127.0.0.1", 0), _StandInHandler)
+        self.requests: list[dict] = []
+        threading.Thread(target=self.serve_forever, daemon=True).start()
+
+    @property
+    def endpoint(self) -> str:
+        return f"http://127.0.0.1:{self.server_port}/v1/responses"
+
+
+class _StandInHandler(BaseHTTPRequestHandler):
+    def log_message(self, *_args) -> None:
+        return
+
+    def do_POST(self) -> None:  # noqa: N802
+        length = int(self.headers.get("Content-Length", "0"))
+        request = json.loads(self.rfile.read(length) or b"{}")
+        self.server.requests.append(request)
+        note = request.get("input")
+        text = f"In plain words: {note if isinstance(note, str) else json.dumps(note)}"
+        body = json.dumps({
+            "id": "resp_smoke", "object": "response", "status": "completed",
+            "model": request.get("model"),
+            "output": [{"type": "message", "id": "msg_smoke", "role": "assistant",
+                        "status": "completed",
+                        "content": [{"type": "output_text", "text": text,
+                                     "annotations": []}]}],
+            "usage": {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        }).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 
 def stop(proc: subprocess.Popen, *, force: bool = False) -> None:
@@ -107,11 +153,13 @@ def main() -> None:
     logs = []
     client = None
 
-    def launch(name: str, executable: str, args: list[str], node_home: Path):
+    def launch(name: str, executable: str, args: list[str], node_home: Path,
+               extra_env: dict[str, str] | None = None):
         log = (folder / f"{name}.log").open("w")
         logs.append(log)
         proc = subprocess.Popen([str(Path(sys.executable).parent / executable), *args],
-                                cwd=ROOT, env={**env, "FLWR_HOME": str(node_home)},
+                                cwd=ROOT,
+                                env={**env, "FLWR_HOME": str(node_home), **(extra_env or {})},
                                 stdout=log, stderr=subprocess.STDOUT,
                                 start_new_session=not ON_WINDOWS)
         processes.append(proc)
@@ -149,6 +197,7 @@ def main() -> None:
         signal.alarm(DEADLINE_SECONDS)
     started = time.monotonic()
     print(f"Real local Flower smoke; logs: {folder}", flush=True)
+    provider = StandInProvider()
     try:
         make_certificates(folder)
         control, fleet, hospital, payer = free_ports()
@@ -185,10 +234,15 @@ def main() -> None:
             assert registered.node_id, f"Could not register {role}"
             data = ROOT / "fixtures" / "supernodes" / role / "providers.json"
             config = f"poppy-role={json.dumps(role)} poppy-data={json.dumps(str(data))}"
+            node_env = None
+            if role == MODEL_ROLE:
+                config += f" poppy-model={json.dumps(NODE_MODEL)}"
+                node_env = {"ENDEAVOR_ENABLED": "1", "FLWR_MODEL_API_KEY": "smoke-only",
+                            "FLWR_MODEL_API_ENDPOINT": provider.endpoint}
             launch(role, "flower-supernode", [
                 "--superlink", f"127.0.0.1:{fleet}", "--root-certificates", str(folder / "ca.crt"),
                 "--auth-supernode-private-key", str(key_path), "--node-config", config,
-                "--host", "127.0.0.1", "--port", str(port)], folder / role)
+                "--host", "127.0.0.1", "--port", str(port)], folder / role, node_env)
         for _ in range(100):
             nodes = client.ListNodes(ListNodesRequest()).nodes_info
             if len(nodes) == 2 and all(n.status == "online" for n in nodes):
@@ -229,6 +283,15 @@ def main() -> None:
         conflicts = stage(events, "claims_aggregated")["conflicts"]
         assert [c["status"] for c in conflicts] == ["explained"]
         assert stage(events, "claim_recheck_response.HospitalCred")["ok"]
+        # The hospital worded its note with its own model; the payer has none.
+        follow_up = conflicts[0]["follow_up"]
+        assert follow_up.get("worded_by") == NODE_MODEL, "HospitalCred did not use its model"
+        assert follow_up["notes"].startswith("In plain words: Documented leave")
+        assert follow_up["value"] is True and follow_up["resolves_dispute"] is True
+        assert "worded_by" not in conflicts[0]["dispute"]
+        assert provider.requests, "the node's provider was never called"
+        assert all(r["model"] == NODE_MODEL for r in provider.requests)
+        assert all("fixture://" not in json.dumps(r) for r in provider.requests)
         _, _, approved = turn(f"/approve run-{run} automated synthetic smoke test", series)
         receipts = receipt_events(approved)
         assert len(receipts) == 1 and receipts[0]["outcome"] == "credentialed"
@@ -257,11 +320,13 @@ def main() -> None:
                     "checks": ["real node replies", "six claims", "no data in FAB", "pending review",
                                "persistent state", "wrong ID", "approve", "replay", "escalate", "reject",
                                "conflict explained then approved",
+                               "node words its note with its own model provider",
                                "unresolved conflict cannot be approved",
                                "offline node cannot credential"]}
         (folder / "result.json").write_text(json.dumps(evidence, indent=2))
         print("PASS: " + ", ".join(evidence["checks"]), flush=True)
     finally:
+        provider.shutdown()
         if watchdog is not None:
             watchdog.cancel()
         else:

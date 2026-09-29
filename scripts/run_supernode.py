@@ -16,6 +16,8 @@ def main() -> None:
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--superlink', default='fleet-supergrid.flower.ai:443')
     parser.add_argument('--port', type=int, default=8011)
+    parser.add_argument('--model', help="model id this node uses to word its notes; "
+                        "the provider comes from this node's FLWR_MODEL_API_* environment")
     args = parser.parse_args()
     data = args.data.resolve(strict=True)
     key = args.key.resolve(strict=True)
@@ -26,6 +28,8 @@ def main() -> None:
     if not executable:
         parser.error('Install Flower 1.39 and activate its environment first')
     config = f'poppy-role={json.dumps(args.role)} poppy-data={json.dumps(str(data))}'
+    if args.model:
+        config += f' poppy-model={json.dumps(args.model)}'
     command = [executable, '--superlink', args.superlink,
                '--auth-supernode-private-key', str(key), '--node-config', config,
                '--host', '127.0.0.1', '--port', str(args.port),
